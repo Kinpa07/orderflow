@@ -216,3 +216,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Learning tools (personal, not project code)
+CURRICULUM.md
+REVIEW_PROMPT.md
