@@ -3,7 +3,7 @@ from models.order import Order
 from models.order_status import OrderStatus
 
 
-def validate_not_null(value: int | str, field_name : str) -> None:
+def validate_not_null(value: int | str | None, field_name : str) -> None:
     if value is None:
         raise ValueError(f"{field_name} cannot be null")
 
