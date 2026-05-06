@@ -16,8 +16,6 @@ def validate_not_bellow_zero(value: int | float, field_name : str) -> None:
 def validate_order(order: Order) -> None:
     validate_not_null(order.tenant_id, "tenant_id")
     validate_not_bellow_zero(order.price, "price")
-    if order.status not in OrderStatus:
-        raise ValueError(f"status must be one of {OrderStatus}")
     
 
 def validate_tenant(tenant: Tenant) -> None:
