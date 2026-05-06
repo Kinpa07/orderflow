@@ -32,7 +32,6 @@ for order in orders:
         validate_order(order)
     except ValueError as e:
         errors_orders.append(f"Order {order.id} is invalid: {e}")
-        continue
 if not errors_orders:
     print("All orders are valid")
 else:
@@ -46,7 +45,6 @@ for tenant in tenants:
         validate_tenant(tenant)
     except ValueError as e:
         errors_tenants.append(f"Tenant {tenant.id} is invalid: {e}")
-        continue
 if not errors_tenants:
     print("All tenants are valid")
 
