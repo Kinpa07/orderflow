@@ -9,7 +9,7 @@ def validate_not_null(value: int | str | None, field_name : str) -> None:
 
 def validate_not_bellow_zero(value: int | float, field_name : str) -> None:
     if value <= 0:
-        raise ValueError(f"{field_name} cannot be zero or bellow")
+        raise ValueError(f"{field_name} cannot be zero or below")
 
 
 
