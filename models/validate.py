@@ -7,7 +7,7 @@ def validate_not_null(value: int | str | None, field_name : str) -> None:
     if value is None:
         raise ValueError(f"{field_name} cannot be null")
 
-def validate_not_bellow_zero(value: int | float, field_name : str) -> None:
+def validate_not_below_zero(value: int | float, field_name : str) -> None:
     if value <= 0:
         raise ValueError(f"{field_name} cannot be zero or below")
 
@@ -15,7 +15,7 @@ def validate_not_bellow_zero(value: int | float, field_name : str) -> None:
 
 def validate_order(order: Order) -> None:
     validate_not_null(order.tenant_id, "tenant_id")
-    validate_not_bellow_zero(order.price, "price")
+    validate_not_below_zero(order.price, "price")
     
 
 def validate_tenant(tenant: Tenant) -> None:
