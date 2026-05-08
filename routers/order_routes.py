@@ -2,6 +2,7 @@ from fastapi import APIRouter
 from schemas.order import OrderResponse, OrderCreate
 from models.order_status import OrderStatus
 from datetime import datetime
+from services.order_services import create_order
 
 order_router = APIRouter()
 
@@ -18,5 +19,6 @@ async def list_orders(
 
 
 @order_router.post("/", response_model=OrderResponse)
-async def create_order(id: int, order: OrderCreate):
-    pass
+async def create_orders(id: int, order: OrderCreate):
+    response = await create_order(id, order)
+    return response
