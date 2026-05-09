@@ -1,6 +1,6 @@
 from datetime import datetime
 from db.storage import temp_db_orders, temp_db_tenants
-from schemas.order import OrderCreate, OrderResponse
+from schemas.order import OrderCreate, OrderResponse, OrderResponseList
 from models.order_status import OrderStatus
 from models.order import Order
 from fastapi import HTTPException
@@ -23,14 +23,21 @@ async def create_order(tenant_id: int, order: OrderCreate) -> OrderResponse:
     return response
 
 async def list_order(tenant_id: int,
+                     page: int = 1,
                     cursor_created_at: datetime | None = None,
                     cursor_id: int | None = None,
                     status: OrderStatus | None = None,
-                    limit: int = 20,) -> list[OrderResponse]:
-    
-    response =[order for order in temp_db_orders if order.tenant_id == tenant_id]
+                    limit: int = 20,) -> OrderResponseList:
 
+
+    if not cursor_id:
+        offset = (page - 1) * limit
+        response =[order for order in temp_db_orders if order.tenant_id == tenant_id][offset:offset + limit]
+    else:
+        response = [order for order in temp_db_orders if order.tenant_id == tenant_id and cursor_id < order.id][:limit]
     if status:
         response = [order for order in response if order.status == status]
     
-    return list(OrderResponse(**order.__dict__) for order in response)
+    next_cursor = response[-1].id if (response and len(response) == limit) else None
+    
+    return OrderResponseList(orders=[OrderResponse(**order.__dict__) for order in response], next_cursor=next_cursor)

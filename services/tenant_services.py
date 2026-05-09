@@ -1,5 +1,5 @@
 from db.storage import temp_db_tenants
-from schemas.tenant import TenantConfig, TenantCreate, TenantResponse
+from schemas.tenant import TenantCreate, TenantResponse
 from models.tenant import Tenant
 import uuid
 
