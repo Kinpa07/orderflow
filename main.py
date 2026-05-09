@@ -18,6 +18,6 @@ async def app_error_handler(request, exc: HTTPException):
 app.include_router(tenant_router, prefix="/tenants", tags=["tenants"])
 app.include_router(order_router, prefix="/tenants/{id}/orders", tags=["orders"])
 
-@app.get("/")
+@app.get("/health")
 async def root():
-    return {"message": "Hello World"}
+    return {"status": "OK"}
