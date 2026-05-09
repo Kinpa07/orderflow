@@ -9,3 +9,7 @@ class OrderResponse(BaseModel):
     tenant_id: int
     price: float
     status: OrderStatus
+
+class OrderResponseList(BaseModel):
+    orders: list[OrderResponse]
+    next_cursor: int | None = None
