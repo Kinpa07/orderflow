@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from schemas.order import OrderResponse, OrderCreate
 from models.order_status import OrderStatus
 from datetime import datetime
-from services.order_services import create_order
+from services.order_services import create_order, list_order
 
 order_router = APIRouter()
 
@@ -15,7 +15,8 @@ async def list_orders(
     status: OrderStatus | None = None,
     limit: int = 20,
 ):
-    pass
+    response = await list_order(id, cursor_created_at, cursor_id, status, limit)
+    return response
 
 
 @order_router.post("/", response_model=OrderResponse)

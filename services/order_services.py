@@ -1,13 +1,36 @@
-from db.storage import temp_db_orders
+from datetime import datetime
+from db.storage import temp_db_orders, temp_db_tenants
 from schemas.order import OrderCreate, OrderResponse
 from models.order_status import OrderStatus
+from models.order import Order
+from fastapi import HTTPException
 
 async def create_order(tenant_id: int, order: OrderCreate) -> OrderResponse:
+    curr_tenant = next((tenant for tenant in temp_db_tenants if tenant.id == tenant_id), None)
+
+    if not curr_tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    if curr_tenant.config.maximum_price is not None and order.price > curr_tenant.config.maximum_price:
+        raise HTTPException(status_code=400, detail=f"Price exceeds maximum allowed price of {curr_tenant.config.maximum_price}")
     response = OrderResponse(
         id=len(temp_db_orders) + 1,
         tenant_id=tenant_id,
         price=order.price,
         status=OrderStatus.PENDING
     )
-    temp_db_orders.append(response)
+    temp_db_orders.append(Order(**response.model_dump()))
     return response
+
+async def list_order(tenant_id: int,
+                    cursor_created_at: datetime | None = None,
+                    cursor_id: int | None = None,
+                    status: OrderStatus | None = None,
+                    limit: int = 20,) -> list[OrderResponse]:
+    
+    response =[order for order in temp_db_orders if order.tenant_id == tenant_id]
+
+    if status:
+        response = [order for order in response if order.status == status]
+    
+    return list(OrderResponse(**order.__dict__) for order in response)

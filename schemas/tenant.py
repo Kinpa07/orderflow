@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 class TenantConfig(BaseModel):
     maximum_price: float | None = Field(default=None, description="The maximum price for orders placed by the tenant.")
@@ -11,6 +11,7 @@ class TenantCreate(BaseModel):
     config: TenantConfig
 
 class TenantResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
     company_name: str
     contact_name: str
     email: str
