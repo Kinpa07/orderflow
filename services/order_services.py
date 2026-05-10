@@ -31,7 +31,7 @@ async def list_order(tenant_id: int,
                     limit: int = 20,) -> OrderResponseList:
 
 
-    if not cursor_id:
+    if cursor_id is None:
         offset = (page - 1) * limit
         response =[order for order in temp_db_orders if order.tenant_id == tenant_id][offset:offset + limit]
     else:
