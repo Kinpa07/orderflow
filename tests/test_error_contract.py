@@ -1,17 +1,17 @@
-import pytest
 from fastapi import testclient
 from main import app
+import httpx
 
 client = testclient.TestClient(app)
 
-def assert_error_shape(response):
+def assert_error_shape(response: httpx.Response) -> None:
     body = response.json()
     assert "error" in body
     assert "code" in body["error"]
     assert "message" in body["error"]
     assert "details" in body["error"]
 
-def create_tenant_and_test_order_creation() :
+def create_tenant_and_test_order_creation() -> tuple[str, int]:
     # Create a tenant with a valid API key
     tenant_response = client.post("/tenants/", json={"company_name": "Test Company",
                                                       "contact_name": "John Doe", "email": "john.doe@testcompany.com", 
@@ -21,18 +21,18 @@ def create_tenant_and_test_order_creation() :
     return api_key, id
 
 
-def test_no_authentication():
+def test_no_authentication() -> None:
         response = client.post("/tenants/1/orders/", json={"price": 50.0})
         assert response.status_code == 401
         assert_error_shape(response)
 
-def test_valid_authentication_not_existing_tenant():
+def test_valid_authentication_not_existing_tenant() -> None:
     api_key, tenant_id = create_tenant_and_test_order_creation()
     response = client.post("/tenants/15/orders/", json={"price": 50.0}, headers={"api-key": api_key})
     assert response.status_code == 404
     assert_error_shape(response)
 
-def test_price_exceeds_maximum():
+def test_price_exceeds_maximum() -> None:
     api_key, tenant_id = create_tenant_and_test_order_creation()
     response = client.post(f"/tenants/{tenant_id}/orders/", json={"price": 150.0}, headers={"api-key": api_key})
     assert response.status_code == 400
