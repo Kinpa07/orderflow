@@ -5,7 +5,26 @@ from fastapi.responses import JSONResponse
 from routers.tenant_routes import tenant_router
 from routers.order_routes import order_router
 from error import AppError
+import structlog
+from middleware import APIMiddleware
+
+structlog.configure(
+    processors=[
+        # Add timestamp field
+        structlog.processors.TimeStamper(fmt="iso"),
+
+        # Add level="info"/"error"
+        structlog.stdlib.add_log_level,
+
+        # Convert final event dict to JSON
+        structlog.processors.JSONRenderer(),
+    ],
+)
+
 app = FastAPI()
+
+app.add_middleware(APIMiddleware)
+
 @app.exception_handler(HTTPException)
 async def app_error_handler(request, exc: HTTPException):
     error = AppError(message=exc.detail, code=exc.status_code, details=[])
