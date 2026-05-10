@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from models.tenant import Tenant
 from schemas.order import OrderResponse, OrderCreate, OrderResponseList
 from models.order_status import OrderStatus
@@ -17,13 +17,18 @@ async def list_orders(
     cursor_id: int | None = None,
     status: OrderStatus | None = None,
     limit: int = 20,
-    _: Tenant = Depends(verify_api_key)
+    tenant: Tenant = Depends(verify_api_key)
 ) -> OrderResponseList:
+    if tenant.id != id:
+        raise HTTPException(status_code=403, detail="Forbidden: Tenant ID mismatch")
     response = await list_order(id, page, cursor_created_at, cursor_id, status, limit)
     return response
 
 
 @order_router.post("/", response_model=OrderResponse)
-async def create_orders(id: int, order: OrderCreate, _: Tenant = Depends(verify_api_key)) -> OrderResponse:
+async def create_orders(id: int, order: OrderCreate, tenant: Tenant = Depends(verify_api_key)) -> OrderResponse:
+    if tenant.id != id:
+        raise HTTPException(status_code=403, detail="Forbidden: Tenant ID mismatch")
     response = await create_order(id, order)
     return response
+    
