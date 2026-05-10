@@ -31,13 +31,14 @@ async def list_order(tenant_id: int,
                     limit: int = 20,) -> OrderResponseList:
 
 
+
+    filtered =  [order for order in temp_db_orders if order.tenant_id == tenant_id and (order.status == status or status is None)]
+    
     if cursor_id is None:
         offset = (page - 1) * limit
-        response =[order for order in temp_db_orders if order.tenant_id == tenant_id][offset:offset + limit]
+        response = filtered[offset:offset + limit]
     else:
-        response = [order for order in temp_db_orders if order.tenant_id == tenant_id and order.id is not None and cursor_id < order.id][:limit]
-    if status:
-        response = [order for order in response if order.status == status]
+        response = [order for order in filtered if order.id is not None and cursor_id < order.id][:limit]
     
     
     next_cursor = response[-1].id if (response and len(response) == limit) else None
