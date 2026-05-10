@@ -5,8 +5,6 @@ from models.validate import validate_order
 from models.validate import validate_tenant
 
 
-
-
 orders = [
     Order(id=1, tenant_id=1, price=0, status=OrderStatus.PENDING),
     Order(id=2, tenant_id=1, price=200.0, status=OrderStatus.SHIPPED),
@@ -17,10 +15,18 @@ orders = [
 
 tenants = [
     Tenant(id=1, company_name="Test", contact_name="Test", email="Test", phone="Test"),
-    Tenant(id=2, company_name="Test2", contact_name="Test2", email="Test2", phone="Test2"),
-    Tenant(id=3, company_name="Test3", contact_name="Test3", email="Test3", phone="Test3"),
-    Tenant(id=4, company_name="Test4", contact_name="Test4", email="Test4", phone="Test4"),
-    Tenant(id=5, company_name="Test5", contact_name="Test5", email="Test5", phone="Test5"),
+    Tenant(
+        id=2, company_name="Test2", contact_name="Test2", email="Test2", phone="Test2"
+    ),
+    Tenant(
+        id=3, company_name="Test3", contact_name="Test3", email="Test3", phone="Test3"
+    ),
+    Tenant(
+        id=4, company_name="Test4", contact_name="Test4", email="Test4", phone="Test4"
+    ),
+    Tenant(
+        id=5, company_name="Test5", contact_name="Test5", email="Test5", phone="Test5"
+    ),
 ]
 
 errors_orders = []
@@ -52,4 +58,3 @@ else:
     print("The following tenants are invalid:")
     for error in errors_tenants:
         print(error)
-

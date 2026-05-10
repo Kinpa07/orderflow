@@ -3,7 +3,6 @@ from datetime import datetime
 from models.order_status import OrderStatus
 
 
-
 @dataclass
 class Order:
     tenant_id: int
