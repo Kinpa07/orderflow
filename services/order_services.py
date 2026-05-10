@@ -17,7 +17,8 @@ async def create_order(tenant_id: int, order: OrderCreate) -> OrderResponse:
         id=len(temp_db_orders) + 1,
         tenant_id=tenant_id,
         price=order.price,
-        status=OrderStatus.PENDING
+        status=OrderStatus.PENDING,
+        created_at=datetime.now()
     )
     temp_db_orders.append(Order(**response.model_dump()))
     return response
@@ -37,6 +38,7 @@ async def list_order(tenant_id: int,
         response = [order for order in temp_db_orders if order.tenant_id == tenant_id and cursor_id < order.id][:limit]
     if status:
         response = [order for order in response if order.status == status]
+    
     
     next_cursor = response[-1].id if (response and len(response) == limit) else None
     
