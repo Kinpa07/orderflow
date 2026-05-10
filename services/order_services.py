@@ -34,9 +34,13 @@ async def list_order(tenant_id: int,
 
     filtered =  [order for order in temp_db_orders if order.tenant_id == tenant_id and (order.status == status or status is None)]
     
+    #Offset pagination
     if cursor_id is None:
         offset = (page - 1) * limit
         response = filtered[offset:offset + limit]
+    #Cursor pagination which takes precedence since it is more performant and consistent than offset pagination, 
+    # where it's possible to have duplicate or missing items across pages if there are new orders 
+    # being created while paginating
     else:
         response = [order for order in filtered if order.id is not None and cursor_id < order.id][:limit]
     
