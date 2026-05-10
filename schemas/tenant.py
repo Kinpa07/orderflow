@@ -2,8 +2,12 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+
 class TenantConfig(BaseModel):
-    maximum_price: float | None = Field(default=None, description="The maximum price for orders placed by the tenant.")
+    maximum_price: float | None = Field(
+        default=None, description="The maximum price for orders placed by the tenant."
+    )
+
 
 class TenantCreate(BaseModel):
     company_name: str
@@ -20,6 +24,7 @@ class TenantCreate(BaseModel):
             raise ValueError("Email address must contain company name")
         return self
 
+
 class TenantResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
     company_name: str
@@ -28,4 +33,3 @@ class TenantResponse(BaseModel):
     phone: str
     id: int
     api_key: str
-

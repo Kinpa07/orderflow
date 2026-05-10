@@ -17,7 +17,7 @@ async def list_orders(
     cursor_id: int | None = None,
     status: OrderStatus | None = None,
     limit: int = 20,
-    tenant: Tenant = Depends(verify_api_key)
+    tenant: Tenant = Depends(verify_api_key),
 ) -> OrderResponseList:
     if tenant.id != id:
         raise HTTPException(status_code=403, detail="Forbidden: Tenant ID mismatch")
@@ -26,9 +26,10 @@ async def list_orders(
 
 
 @order_router.post("/", response_model=OrderResponse)
-async def create_orders(id: int, order: OrderCreate, tenant: Tenant = Depends(verify_api_key)) -> OrderResponse:
+async def create_orders(
+    id: int, order: OrderCreate, tenant: Tenant = Depends(verify_api_key)
+) -> OrderResponse:
     if tenant.id != id:
         raise HTTPException(status_code=403, detail="Forbidden: Tenant ID mismatch")
     response = await create_order(id, order)
     return response
-    
