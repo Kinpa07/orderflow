@@ -18,12 +18,12 @@ async def list_orders(
     status: OrderStatus | None = None,
     limit: int = 20,
     _: Tenant = Depends(verify_api_key)
-):
+) -> OrderResponseList:
     response = await list_order(id, page, cursor_created_at, cursor_id, status, limit)
     return response
 
 
 @order_router.post("/", response_model=OrderResponse)
-async def create_orders(id: int, order: OrderCreate, _: Tenant = Depends(verify_api_key)):
+async def create_orders(id: int, order: OrderCreate, _: Tenant = Depends(verify_api_key)) -> OrderResponse:
     response = await create_order(id, order)
     return response

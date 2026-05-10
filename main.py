@@ -1,5 +1,5 @@
 import dataclasses
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from routers.tenant_routes import tenant_router
@@ -26,38 +26,35 @@ app = FastAPI()
 app.add_middleware(APIMiddleware)
 
 @app.exception_handler(HTTPException)
-async def app_error_handler(request, exc: HTTPException):
+async def app_error_handler(request: Request, exc: HTTPException) -> JSONResponse:
     error = AppError(message=exc.detail, code=exc.status_code, details=[])
-    error ={"error": dataclasses.asdict(error)}
-    return(
-        JSONResponse(
-            content=error,
-            status_code=exc.status_code,
-        )
-    )
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request, exc: RequestValidationError):
-    error = AppError(message="Validation error", code=422, details=exc.errors())
-    error ={"error": dataclasses.asdict(error)}
+    body = {"error": dataclasses.asdict(error)}
     return JSONResponse(
-        content=error,
+        content=body,
+        status_code=exc.status_code,
+    )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    error = AppError(message="Validation error", code=422, details=list(exc.errors()))
+    body = {"error": dataclasses.asdict(error)}
+    return JSONResponse(
+        content=body,
         status_code=422,
     )
 
 @app.exception_handler(Exception)
-async def server_error_handler(request, exc: Exception):
+async def server_error_handler(request: Request, _exc: Exception) -> JSONResponse:
     error = AppError(message="Internal server error", code=500, details=[])
-    error ={"error": dataclasses.asdict(error)}
-    return(
-        JSONResponse(
-            content=error,
-            status_code=500,
-        )
+    body = {"error": dataclasses.asdict(error)}
+    return JSONResponse(
+        content=body,
+        status_code=500,
     )
 
 app.include_router(tenant_router, prefix="/tenants", tags=["tenants"])
 app.include_router(order_router, prefix="/tenants/{id}/orders", tags=["orders"])
 
 @app.get("/health")
-async def root():
+async def root() -> dict[str, str]:
     return {"status": "OK"}
