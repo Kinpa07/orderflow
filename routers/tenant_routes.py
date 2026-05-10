@@ -6,6 +6,6 @@ tenant_router = APIRouter()
 
 
 @tenant_router.post("/", response_model=TenantResponse)
-async def create_tenants(tenant: TenantCreate):
+async def create_tenants(tenant: TenantCreate) -> TenantResponse:
     response = await create_tenant(tenant)
     return response

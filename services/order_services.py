@@ -11,7 +11,7 @@ async def create_order(tenant_id: int, order: OrderCreate) -> OrderResponse:
     if not curr_tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
     
-    if curr_tenant.config.maximum_price is not None and order.price > curr_tenant.config.maximum_price:
+    if curr_tenant.config is not None and curr_tenant.config.maximum_price is not None and order.price > curr_tenant.config.maximum_price:
         raise HTTPException(status_code=400, detail=f"Price exceeds maximum allowed price of {curr_tenant.config.maximum_price}")
     response = OrderResponse(
         id=len(temp_db_orders) + 1,
@@ -35,7 +35,7 @@ async def list_order(tenant_id: int,
         offset = (page - 1) * limit
         response =[order for order in temp_db_orders if order.tenant_id == tenant_id][offset:offset + limit]
     else:
-        response = [order for order in temp_db_orders if order.tenant_id == tenant_id and cursor_id < order.id][:limit]
+        response = [order for order in temp_db_orders if order.tenant_id == tenant_id and order.id is not None and cursor_id < order.id][:limit]
     if status:
         response = [order for order in response if order.status == status]
     

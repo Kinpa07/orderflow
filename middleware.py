@@ -1,6 +1,8 @@
 import uuid
 
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.requests import Request
+from starlette.responses import Response
 from structlog import get_logger
 from time import perf_counter
 
@@ -8,7 +10,7 @@ logger = get_logger()
 
 
 class APIMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request, call_next):
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         id = uuid.uuid4()
         start = perf_counter()
         logger.info("Received request", request_id = str(id),
