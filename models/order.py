@@ -15,4 +15,5 @@ class Order(Base):
     status: Mapped[OrderStatus] = mapped_column(
         Enum(OrderStatus), nullable=False, default=OrderStatus.PENDING
     )
+    priority: Mapped[int] = mapped_column(Integer, nullable=True, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

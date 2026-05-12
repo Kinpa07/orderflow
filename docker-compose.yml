@@ -6,7 +6,8 @@ services:
     env_file:
       - .env
     volumes:
-      - ./alembic/versions:/app/alembic/versions
+      - .:/app
+      - /app/.venv
     depends_on:
       db:
         condition: service_healthy
