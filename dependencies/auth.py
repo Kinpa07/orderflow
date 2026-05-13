@@ -3,6 +3,8 @@ from fastapi import Depends, HTTPException, Header, Request
 from dependencies.db import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from repositories.tenant_repository import get_tenant_by_api_key
+
 
 
 async def verify_api_key(
@@ -11,8 +13,7 @@ async def verify_api_key(
     db: AsyncSession = Depends(get_db),
 ) -> Tenant:
     
-    stmt = select(Tenant).where(Tenant.api_key == api_key)
-    tenant = (await db.execute(stmt)).scalars().first()
+    tenant = await get_tenant_by_api_key(api_key, db)
 
     if not tenant:
         raise HTTPException(status_code=401, detail="Invalid API key")
