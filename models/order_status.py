@@ -1,7 +1,6 @@
-from enum import Enum
+import enum
 
-
-class OrderStatus(Enum):
+class OrderStatus(enum.Enum):
     PENDING = "pending"
     SHIPPED = "shipped"
     CANCELLED = "cancelled"

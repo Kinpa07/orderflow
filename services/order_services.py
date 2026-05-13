@@ -1,41 +1,44 @@
 from datetime import datetime
-from db.storage import temp_db_orders, temp_db_tenants
 from schemas.order import OrderCreate, OrderResponse, OrderResponseList
 from models.order_status import OrderStatus
 from models.order import Order
 from fastapi import HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from repositories.order_repository import add_order, list_orders, add_order_history
+from repositories.tenant_repository import get_tenant
 
 
-async def create_order(tenant_id: int, order: OrderCreate) -> OrderResponse:
-    curr_tenant = next(
-        (tenant for tenant in temp_db_tenants if tenant.id == tenant_id), None
-    )
+async def create_order(
+    tenant_id: int, order: OrderCreate, db: AsyncSession
+) -> OrderResponse:
+
+    curr_tenant = await get_tenant(tenant_id, db)
 
     if not curr_tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
 
     if (
-        curr_tenant.config is not None
-        and curr_tenant.config.maximum_price is not None
-        and order.price > curr_tenant.config.maximum_price
+        curr_tenant.config.get("maximum_price") is not None
+        and order.price > curr_tenant.config["maximum_price"]
     ):
         raise HTTPException(
             status_code=400,
-            detail=f"Price exceeds maximum allowed price of {curr_tenant.config.maximum_price}",
+            detail=f"Price exceeds maximum allowed price of {curr_tenant.config['maximum_price']}",
         )
-    response = OrderResponse(
-        id=len(temp_db_orders) + 1,
+
+    result = Order(
         tenant_id=tenant_id,
         price=order.price,
-        status=OrderStatus.PENDING,
-        created_at=datetime.now(),
     )
-    temp_db_orders.append(Order(**response.model_dump()))
-    return response
+
+    await add_order(result, db)
+    await add_order_history(result, db)
+    return OrderResponse.model_validate(result)
 
 
 async def list_order(
     tenant_id: int,
+    db: AsyncSession,
     page: int = 1,
     cursor_created_at: datetime | None = None,
     cursor_id: int | None = None,
@@ -43,27 +46,17 @@ async def list_order(
     limit: int = 20,
 ) -> OrderResponseList:
 
-    filtered = [
-        order
-        for order in temp_db_orders
-        if order.tenant_id == tenant_id and (order.status == status or status is None)
-    ]
-
-    # Offset pagination
-    if cursor_id is None:
-        offset = (page - 1) * limit
-        response = filtered[offset : offset + limit]
-    # Cursor pagination which takes precedence since it is more performant and consistent than offset pagination,
-    # where it's possible to have duplicate or missing items across pages if there are new orders
-    # being created while paginating
-    else:
-        response = [
-            order for order in filtered if order.id is not None and cursor_id < order.id
-        ][:limit]
+    response = await list_orders(
+        tenant_id, db, status, cursor_created_at, cursor_id, page, limit
+    )
 
     next_cursor = response[-1].id if (response and len(response) == limit) else None
+    next_cursor_created_at = (
+        response[-1].created_at if (response and len(response) == limit) else None
+    )
 
     return OrderResponseList(
-        orders=[OrderResponse(**order.__dict__) for order in response],
+        orders=[OrderResponse.model_validate(order) for order in response],
         next_cursor=next_cursor,
+        next_cursor_created_at=next_cursor_created_at,
     )

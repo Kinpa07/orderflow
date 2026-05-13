@@ -26,7 +26,7 @@ class TenantCreate(BaseModel):
 
 
 class TenantResponse(BaseModel):
-    model_config = ConfigDict(extra="ignore")
+    model_config = ConfigDict(extra="ignore", from_attributes=True)
     company_name: str
     contact_name: str
     email: str
