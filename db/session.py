@@ -1,23 +1,38 @@
 import os
-
+import time
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
+from structlog import get_logger
+
+logger = get_logger()
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
-# Async engine
 engine = create_async_engine(
     DATABASE_URL,
     echo=False,
     pool_pre_ping=True,
 )
 
-# Session factory
+
+class TimedAsyncSession(AsyncSession):
+    async def execute(self, statement, *args, **kwargs):
+        start = time.perf_counter()
+        result = await super().execute(statement, *args, **kwargs)
+        duration = (time.perf_counter() - start) * 1000
+        logger.info(
+            "SQL Query",
+            duration_ms=round(duration, 2),
+            statement=str(statement).strip()[:200],
+        )
+        return result
+
+
 AsyncSessionLocal = async_sessionmaker(
     bind=engine,
-    class_=AsyncSession,
+    class_=TimedAsyncSession,
     expire_on_commit=False,
 )
