@@ -20,7 +20,7 @@ async def create_tenant_to_get_api_key(client: AsyncClient) -> tuple[str, int]:
     id = tenant_response.json()["id"]
     return api_key, id
 
-async def test_create_order(client: AsyncClient, db_session: AsyncSession,):
+async def test_create_order(client: AsyncClient, db_session: AsyncSession) -> None:
     api_key, tena_id = await create_tenant_to_get_api_key(client)
     order_response = await client.post(
         f"/tenants/{tena_id}/orders/",

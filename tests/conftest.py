@@ -1,4 +1,5 @@
 import os
+from collections.abc import AsyncGenerator
 
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
@@ -20,13 +21,14 @@ TestSessionLocal = async_sessionmaker(
 
 
 @pytest_asyncio.fixture(scope="session", autouse=True)
-async def setup_db() -> None:
+async def setup_db() -> AsyncGenerator[None, None]:
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all, checkfirst=True)
+    yield
 
 
 @pytest_asyncio.fixture(autouse=True)
-async def clean_tables() -> None:
+async def clean_tables() -> AsyncGenerator[None, None]:
     yield
     async with test_engine.begin() as conn:
         for table in reversed(Base.metadata.sorted_tables):
@@ -34,14 +36,14 @@ async def clean_tables() -> None:
 
 
 @pytest_asyncio.fixture
-async def db_session() -> AsyncSession:
+async def db_session() -> AsyncGenerator[AsyncSession, None]:
     async with TestSessionLocal() as session:
         yield session
 
 
 @pytest_asyncio.fixture
-async def client() -> AsyncClient:
-    async def override_get_db() -> AsyncSession:
+async def client() -> AsyncGenerator[AsyncClient, None]:
+    async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
         async with TestSessionLocal() as session:
             try:
                 yield session

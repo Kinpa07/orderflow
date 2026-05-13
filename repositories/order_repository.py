@@ -1,3 +1,5 @@
+from collections.abc import Sequence
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, and_
 from datetime import datetime
@@ -19,7 +21,7 @@ async def display_orders(
     cursor_id: int | None = None,
     page: int = 1,
     limit: int = 20,
-) -> list[Order]:
+) -> Sequence[Order]:
     stmt = (
         select(Order)
         .where(Order.tenant_id == tenant_id)

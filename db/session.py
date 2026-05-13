@@ -1,5 +1,7 @@
 import os
 import time
+from typing import Any
+
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -19,7 +21,7 @@ engine = create_async_engine(
 
 
 class TimedAsyncSession(AsyncSession):
-    async def execute(self, statement, *args, **kwargs):
+    async def execute(self, statement: Any, *args: Any, **kwargs: Any) -> Any:
         start = time.perf_counter()
         result = await super().execute(statement, *args, **kwargs)
         duration = (time.perf_counter() - start) * 1000
