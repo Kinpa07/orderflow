@@ -4,7 +4,7 @@ from models.order_status import OrderStatus
 from models.order import Order
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from repositories.order_repository import add_order, display_orders, add_order_history
+from repositories.order_repository import add_order, list_orders, add_order_history
 from repositories.tenant_repository import get_tenant
 
 
@@ -18,8 +18,7 @@ async def create_order(
         raise HTTPException(status_code=404, detail="Tenant not found")
 
     if (
-        curr_tenant.config is not None
-        and curr_tenant.config.get("maximum_price") is not None
+        curr_tenant.config.get("maximum_price") is not None
         and order.price > curr_tenant.config["maximum_price"]
     ):
         raise HTTPException(
@@ -47,7 +46,7 @@ async def list_order(
     limit: int = 20,
 ) -> OrderResponseList:
 
-    response = await display_orders(
+    response = await list_orders(
         tenant_id, db, status, cursor_created_at, cursor_id, page, limit
     )
 

@@ -13,7 +13,7 @@ order_router = APIRouter()
 
 @order_router.get("/", response_model=OrderResponseList)
 async def list_orders(
-    id: int,
+    tenant_id: int,
     db: AsyncSession = Depends(get_db),
     page: int = 1,
     cursor_created_at: datetime | None = None,
@@ -22,22 +22,22 @@ async def list_orders(
     limit: int = 20,
     tenant: Tenant = Depends(verify_api_key),
 ) -> OrderResponseList:
-    if tenant.id != id:
+    if tenant.id != tenant_id:
         raise HTTPException(status_code=403, detail="Forbidden: Tenant ID mismatch")
     response = await list_order(
-        id, db, page, cursor_created_at, cursor_id, status, limit,
+        tenant_id, db, page, cursor_created_at, cursor_id, status, limit,
     )
     return response
 
 
 @order_router.post("/", response_model=OrderResponse)
 async def create_orders(
-    id: int,
+    tenant_id: int,
     order: OrderCreate,
     tenant: Tenant = Depends(verify_api_key),
     db: AsyncSession = Depends(get_db),
 ) -> OrderResponse:
-    if tenant.id != id:
+    if tenant.id != tenant_id:
         raise HTTPException(status_code=403, detail="Forbidden: Tenant ID mismatch")
-    response = await create_order(id, order, db)
+    response = await create_order(tenant_id, order, db)
     return response

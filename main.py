@@ -57,7 +57,7 @@ async def server_error_handler(request: Request, _exc: Exception) -> JSONRespons
 
 
 app.include_router(tenant_router, prefix="/tenants", tags=["tenants"])
-app.include_router(order_router, prefix="/tenants/{id}/orders", tags=["orders"])
+app.include_router(order_router, prefix="/tenants/{tenant_id}/orders", tags=["orders"])
 
 
 @app.get("/health")

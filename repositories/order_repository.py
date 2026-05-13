@@ -18,7 +18,7 @@ async def add_order_history(order: Order, db: AsyncSession) -> None:
     db.add(history)
     await db.flush()
 
-async def display_orders(
+async def list_orders(
     tenant_id: int,
     db: AsyncSession,
     status: OrderStatus | None = None,
