@@ -4,6 +4,7 @@ from sqlalchemy import pool
 from models.base import Base
 from models.tenant import Tenant  # noqa: F401
 from models.order import Order  # noqa: F401
+from models.order_status_history import OrderStatusHistory  # noqa: F401
 import asyncio
 
 import os
