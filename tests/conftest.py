@@ -1,14 +1,58 @@
-from collections.abc import Generator
+import os
 
-import pytest
+import pytest_asyncio
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
+
+from dependencies.db import get_db
+from main import app
+from models.base import Base
+
+DATABASE_URL = os.environ.get(
+    "DATABASE_URL", "postgresql+asyncpg://orderflow:orderflow@db:5432/orderflow"
+)
+
+test_engine = create_async_engine(DATABASE_URL, poolclass=NullPool)
+TestSessionLocal = async_sessionmaker(
+    bind=test_engine, class_=AsyncSession, expire_on_commit=False
+)
 
 
-@pytest.fixture(autouse=True)
-def clean_db() -> Generator[None, None, None]:
-    from db.storage import temp_db_tenants, temp_db_orders
+@pytest_asyncio.fixture(scope="session", autouse=True)
+async def setup_db() -> None:
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all, checkfirst=True)
 
+
+@pytest_asyncio.fixture(autouse=True)
+async def clean_tables() -> None:
     yield
+    async with test_engine.begin() as conn:
+        for table in reversed(Base.metadata.sorted_tables):
+            await conn.execute(table.delete())
 
-    # Clear the temporary databases after each test to ensure test isolation
-    temp_db_tenants.clear()
-    temp_db_orders.clear()
+
+@pytest_asyncio.fixture
+async def db_session() -> AsyncSession:
+    async with TestSessionLocal() as session:
+        yield session
+
+
+@pytest_asyncio.fixture
+async def client() -> AsyncClient:
+    async def override_get_db() -> AsyncSession:
+        async with TestSessionLocal() as session:
+            try:
+                yield session
+                await session.commit()
+            except Exception:
+                await session.rollback()
+                raise
+
+    app.dependency_overrides[get_db] = override_get_db
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as ac:
+        yield ac
+    app.dependency_overrides.clear()
