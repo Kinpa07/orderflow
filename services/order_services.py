@@ -4,7 +4,7 @@ from models.order_status import OrderStatus
 from models.order import Order
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from repositories.order_repository import add_order, display_orders
+from repositories.order_repository import add_order, display_orders, add_order_history
 from repositories.tenant_repository import get_tenant
 
 
@@ -33,6 +33,7 @@ async def create_order(
     )
 
     await add_order(result, db)
+    await add_order_history(result, db)
     return OrderResponse.model_validate(result)
 
 
