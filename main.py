@@ -38,7 +38,11 @@ async def app_error_handler(request: Request, exc: HTTPException) -> JSONRespons
 async def validation_exception_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
-    error = AppError(message="Validation error", code=422, details=list(exc.errors()))
+    error = AppError(
+        message="Validation error",
+        code=422,
+        details=[{"loc": list(e["loc"]), "msg": e["msg"]} for e in exc.errors()],
+    )
     body = {"error": dataclasses.asdict(error)}
     return JSONResponse(
         content=body,
