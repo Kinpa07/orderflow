@@ -51,11 +51,12 @@ def create(
 def submit(
     tenant_id: int = typer.Option(
         ...,
+        "--tenant",
         help="Tenant ID",
     ),
-    price: float = typer.Option(
+    data: str = typer.Option(
         ...,
-        help="Order price",
+        help="data for the order, currenlty only price is supported, format: {\"price\": 50.0}",
     ),
     api_key: str = typer.Option(
         ...,
@@ -66,7 +67,7 @@ def submit(
     with httpx.Client() as client:
         response = client.post(
             f"http://localhost:8000/tenants/{tenant_id}/orders/",
-            json={"price": price},
+            json=json.loads(data),
             headers={"api-key": api_key},
         )
         print(response.json())
@@ -76,10 +77,12 @@ def submit(
 def status(
     tenant_id: int = typer.Option(
         ...,
+        "--tenant",
         help="Tenant ID",
     ),
     order_id: int = typer.Option(
         ...,
+        "--order",
         help="Order ID",
     ),
     api_key: str = typer.Option(
@@ -95,10 +98,11 @@ def status(
         print(response.json())
 
 
-@orders_app.command()
+@orders_app.command(name="list")
 def list_orders(
     tenant_id: int = typer.Option(
         ...,
+        "--tenant",
         help="Tenant ID",
     ),
     page: int = typer.Option(
