@@ -1,12 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException
-from models.tenant import Tenant
-from schemas.order import OrderResponse, OrderCreate, OrderResponseList
-from models.order_status import OrderStatus
 from datetime import datetime
-from services.order_services import create_order, list_order
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from dependencies.auth import verify_api_key
 from dependencies.db import get_db
-from sqlalchemy.ext.asyncio import AsyncSession
+from models.order_status import OrderStatus
+from models.tenant import Tenant
+from schemas.order import OrderCreate, OrderResponse, OrderResponseList
+from services.order_services import create_order, get_order, list_order
 
 order_router = APIRouter()
 
@@ -25,8 +27,27 @@ async def list_orders(
     if tenant.id != tenant_id:
         raise HTTPException(status_code=403, detail="Forbidden: Tenant ID mismatch")
     response = await list_order(
-        tenant_id, db, page, cursor_created_at, cursor_id, status, limit,
+        tenant_id,
+        db,
+        page,
+        cursor_created_at,
+        cursor_id,
+        status,
+        limit,
     )
+    return response
+
+
+@order_router.get("/{order_id}", response_model=OrderResponse)
+async def get_order_status(
+    tenant_id: int,
+    order_id: int,
+    db: AsyncSession = Depends(get_db),
+    tenant: Tenant = Depends(verify_api_key),
+) -> OrderResponse:
+    if tenant.id != tenant_id:
+        raise HTTPException(status_code=403, detail="Forbidden: Tenant ID mismatch")
+    response = await get_order(tenant_id, order_id, db)
     return response
 
 

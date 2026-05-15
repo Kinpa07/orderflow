@@ -1,8 +1,10 @@
 from datetime import datetime
-from models.order_status import OrderStatus
-from models.base import Base
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, func, Enum
+
+from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, func
 from sqlalchemy.orm import Mapped, mapped_column
+
+from models.base import Base
+from models.order_status import OrderStatus
 
 
 class Order(Base):

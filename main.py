@@ -1,12 +1,14 @@
 import dataclasses
+
+import structlog
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from routers.tenant_routes import tenant_router
-from routers.order_routes import order_router
+
 from error import AppError
-import structlog
 from middleware import APIMiddleware
+from routers.order_routes import order_router
+from routers.tenant_routes import tenant_router
 
 structlog.configure(
     processors=[
@@ -38,7 +40,14 @@ async def app_error_handler(request: Request, exc: HTTPException) -> JSONRespons
 async def validation_exception_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
-    error = AppError(message="Validation error", code=422, details=list(exc.errors()))
+    error = AppError(
+        message="Validation error",
+        code=422,
+        details=[
+            {"loc": list(e["loc"]), "msg": e["msg"], "type": e["type"]}
+            for e in exc.errors()
+        ],
+    )
     body = {"error": dataclasses.asdict(error)}
     return JSONResponse(
         content=body,

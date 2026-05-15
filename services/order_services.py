@@ -1,11 +1,18 @@
 from datetime import datetime
-from schemas.order import OrderCreate, OrderResponse, OrderResponseList
-from models.order_status import OrderStatus
-from models.order import Order
+
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from repositories.order_repository import add_order, list_orders, add_order_history
+
+from models.order import Order
+from models.order_status import OrderStatus
+from repositories.order_repository import (
+    add_order,
+    add_order_history,
+    fetch_order,
+    list_orders,
+)
 from repositories.tenant_repository import get_tenant
+from schemas.order import OrderCreate, OrderResponse, OrderResponseList
 
 
 async def create_order(
@@ -17,13 +24,15 @@ async def create_order(
     if not curr_tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
 
+    max_price = curr_tenant.config["maximum_price"]
+
     if (
         curr_tenant.config.get("maximum_price") is not None
         and order.price > curr_tenant.config["maximum_price"]
     ):
         raise HTTPException(
             status_code=400,
-            detail=f"Price exceeds maximum allowed price of {curr_tenant.config['maximum_price']}",
+            detail=f"Price exceeds maximum allowed price of {max_price}",
         )
 
     result = Order(
@@ -60,3 +69,13 @@ async def list_order(
         next_cursor=next_cursor,
         next_cursor_created_at=next_cursor_created_at,
     )
+
+
+async def get_order(tenant_id: int, order_id: int, db: AsyncSession) -> OrderResponse:
+
+    response = await fetch_order(tenant_id, order_id, db)
+
+    if not response:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    return OrderResponse.model_validate(response)

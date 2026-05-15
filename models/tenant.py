@@ -1,8 +1,9 @@
 from typing import Any
 
-from models.base import Base
 from sqlalchemy import JSON, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
+
+from models.base import Base
 
 
 class Tenant(Base):

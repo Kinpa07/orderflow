@@ -3,16 +3,18 @@ from collections.abc import AsyncGenerator
 
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 from sqlalchemy.pool import NullPool
 
 from dependencies.db import get_db
 from main import app
 from models.base import Base
 
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL", "postgresql+asyncpg://orderflow:orderflow@db:5432/orderflow"
-)
+DATABASE_URL = os.environ["DATABASE_URL"]
 
 test_engine = create_async_engine(DATABASE_URL, poolclass=NullPool)
 TestSessionLocal = async_sessionmaker(
@@ -54,6 +56,17 @@ async def tenant_credentials(client: AsyncClient) -> tuple[str, int]:
         },
     )
     return response.json()["api_key"], response.json()["id"]
+
+
+@pytest_asyncio.fixture
+async def order_id(client: AsyncClient, tenant_credentials: tuple[str, int]) -> int:
+    api_key, tenant_id = tenant_credentials
+    order_response = await client.post(
+        f"/tenants/{tenant_id}/orders/",
+        json={"price": 50.0},
+        headers={"api-key": api_key},
+    )
+    return int(order_response.json()["id"])
 
 
 @pytest_asyncio.fixture

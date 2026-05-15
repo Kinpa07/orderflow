@@ -8,10 +8,25 @@ services:
     volumes:
       - .:/app
       - /app/.venv
-    command: poetry run uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     depends_on:
       db:
         condition: service_healthy
+  
+  order-processor:
+    build: .
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+      - /app/.venv
+    command: uvicorn order_processor.main:app --host 0.0.0.0 --port 8001 --reload
+    depends_on:
+      db:
+        condition: service_healthy
+
 
   db:
     image: postgres:17

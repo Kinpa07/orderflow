@@ -1,10 +1,10 @@
 import uuid
+from time import perf_counter
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 from structlog import get_logger
-from time import perf_counter
 
 logger = get_logger()
 

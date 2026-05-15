@@ -1,13 +1,15 @@
-from sqlalchemy.ext.asyncio import AsyncSession
 from httpx import AsyncClient
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.order import Order
 from models.order_status import OrderStatus
 from models.order_status_history import OrderStatusHistory
-from sqlalchemy import select
 
 
-async def test_create_order(client: AsyncClient, db_session: AsyncSession, tenant_credentials: tuple[str, int]) -> None:
+async def test_create_order(
+    client: AsyncClient, db_session: AsyncSession, tenant_credentials: tuple[str, int]
+) -> None:
     api_key, tena_id = tenant_credentials
     order_response = await client.post(
         f"/tenants/{tena_id}/orders/",
@@ -22,9 +24,7 @@ async def test_create_order(client: AsyncClient, db_session: AsyncSession, tenan
     assert record.priority == 4
     assert record.created_at is not None
 
-    stmt = select(OrderStatusHistory).where(
-        OrderStatusHistory.order_id == record.id
-    )
+    stmt = select(OrderStatusHistory).where(OrderStatusHistory.order_id == record.id)
     history_record = (await db_session.execute(stmt)).scalars().first()
     assert history_record is not None
     assert history_record.status == OrderStatus.PENDING

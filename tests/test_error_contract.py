@@ -16,7 +16,9 @@ async def test_no_authentication(client: AsyncClient) -> None:
     assert_error_shape(response)
 
 
-async def test_tenant_id_missmatch(client: AsyncClient, tenant_credentials: tuple[str, int]) -> None:
+async def test_tenant_id_missmatch(
+    client: AsyncClient, tenant_credentials: tuple[str, int]
+) -> None:
     api_key, tenant_id = tenant_credentials
     response = await client.post(
         "/tenants/15/orders/", json={"price": 50.0}, headers={"api-key": api_key}
@@ -25,7 +27,9 @@ async def test_tenant_id_missmatch(client: AsyncClient, tenant_credentials: tupl
     assert_error_shape(response)
 
 
-async def test_price_exceeds_maximum(client: AsyncClient, tenant_credentials: tuple[str, int]) -> None:
+async def test_price_exceeds_maximum(
+    client: AsyncClient, tenant_credentials: tuple[str, int]
+) -> None:
     api_key, tenant_id = tenant_credentials
     response = await client.post(
         f"/tenants/{tenant_id}/orders/",
