@@ -1,8 +1,11 @@
+import json
+import os
 from datetime import datetime
 
-import typer
 import httpx
-import json
+import typer
+
+BASE_URL = os.environ.get("ORDERFLOW_API_URL", "http://localhost:8000")
 
 
 app = typer.Typer()
@@ -18,7 +21,7 @@ def _handle_response(response: httpx.Response) -> None:
     except httpx.HTTPStatusError as e:
         typer.echo(f"Error: {e.response.status_code} - {e.response.text}", err=True)
         raise typer.Exit(code=1)
-    
+
     typer.echo(response.json())
 
 
@@ -45,7 +48,7 @@ def create(
     with httpx.Client() as client:
         try:
             response = client.post(
-                "http://localhost:8000/tenants/",
+                f"{BASE_URL}/tenants/",
                 json={
                     "company_name": name,
                     "contact_name": contact_name,
@@ -69,7 +72,8 @@ def submit(
     ),
     data: str = typer.Option(
         ...,
-        help='data for the order, currenlty only price is supported, format: {"price": 50.0}',
+        help=('data for the order, currenlty only price is supported, '
+        'format: {"price": 50.0}'),
     ),
     api_key: str = typer.Option(
         ...,
@@ -80,7 +84,7 @@ def submit(
     with httpx.Client() as client:
         try:
             response = client.post(
-                f"http://localhost:8000/tenants/{tenant_id}/orders/",
+                f"{BASE_URL}/tenants/{tenant_id}/orders/",
                 json=json.loads(data),
                 headers={"api-key": api_key},
             )
@@ -110,7 +114,7 @@ def status(
     with httpx.Client() as client:
         try:
             response = client.get(
-                f"http://localhost:8000/tenants/{tenant_id}/orders/{order_id}",
+                f"{BASE_URL}/tenants/{tenant_id}/orders/{order_id}",
                 headers={"api-key": api_key},
             )
         except httpx.RequestError as e:
@@ -154,7 +158,7 @@ def list_orders(
     with httpx.Client() as client:
         try:
             response = client.get(
-                f"http://localhost:8000/tenants/{tenant_id}/orders/",
+                f"{BASE_URL}/tenants/{tenant_id}/orders/",
                 headers={"api-key": api_key},
                 params={
                     k: v
