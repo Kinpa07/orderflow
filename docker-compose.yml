@@ -22,7 +22,7 @@ services:
     volumes:
       - .:/app
       - /app/.venv
-    command: uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+    command: uvicorn order_processor.main:app --host 0.0.0.0 --port 8001 --reload
     depends_on:
       db:
         condition: service_healthy
