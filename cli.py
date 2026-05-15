@@ -12,6 +12,16 @@ app.add_typer(tenants_app, name="tenants")
 app.add_typer(orders_app, name="orders")
 
 
+def _handle_response(response: httpx.Response) -> None:
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as e:
+        typer.echo(f"Error: {e.response.status_code} - {e.response.text}", err=True)
+        raise typer.Exit(code=1)
+    
+    typer.echo(response.json())
+
+
 @tenants_app.command()
 def create(
     contact_name: str = typer.Option(default="John Doe", help="Contact name"),
@@ -32,19 +42,22 @@ def create(
         help="Tenant config",
     ),
 ) -> None:
-    """Create a new tenant."""
     with httpx.Client() as client:
-        response = client.post(
-            "http://localhost:8000/tenants/",
-            json={
-                "company_name": name,
-                "contact_name": contact_name,
-                "email": email,
-                "phone": phone,
-                "config": json.loads(config),
-            },
-        )
-        print(response.json())
+        try:
+            response = client.post(
+                "http://localhost:8000/tenants/",
+                json={
+                    "company_name": name,
+                    "contact_name": contact_name,
+                    "email": email,
+                    "phone": phone,
+                    "config": json.loads(config),
+                },
+            )
+            _handle_response(response)
+        except httpx.RequestError as e:
+            typer.echo(f"Connection Error: {e}", err=True)
+            raise typer.Exit(code=1)
 
 
 @orders_app.command()
@@ -56,7 +69,7 @@ def submit(
     ),
     data: str = typer.Option(
         ...,
-        help="data for the order, currenlty only price is supported, format: {\"price\": 50.0}",
+        help='data for the order, currenlty only price is supported, format: {"price": 50.0}',
     ),
     api_key: str = typer.Option(
         ...,
@@ -65,12 +78,16 @@ def submit(
 ) -> None:
 
     with httpx.Client() as client:
-        response = client.post(
-            f"http://localhost:8000/tenants/{tenant_id}/orders/",
-            json=json.loads(data),
-            headers={"api-key": api_key},
-        )
-        print(response.json())
+        try:
+            response = client.post(
+                f"http://localhost:8000/tenants/{tenant_id}/orders/",
+                json=json.loads(data),
+                headers={"api-key": api_key},
+            )
+        except httpx.RequestError as e:
+            typer.echo(f"Connection Error: {e}", err=True)
+            raise typer.Exit(code=1)
+        _handle_response(response)
 
 
 @orders_app.command()
@@ -91,11 +108,15 @@ def status(
     ),
 ) -> None:
     with httpx.Client() as client:
-        response = client.get(
-            f"http://localhost:8000/tenants/{tenant_id}/orders/{order_id}",
-            headers={"api-key": api_key},
-        )
-        print(response.json())
+        try:
+            response = client.get(
+                f"http://localhost:8000/tenants/{tenant_id}/orders/{order_id}",
+                headers={"api-key": api_key},
+            )
+        except httpx.RequestError as e:
+            typer.echo(f"Connection Error: {e}", err=True)
+            raise typer.Exit(code=1)
+        _handle_response(response)
 
 
 @orders_app.command(name="list")
@@ -131,22 +152,25 @@ def list_orders(
     ),
 ) -> None:
     with httpx.Client() as client:
-        response = client.get(
-            f"http://localhost:8000/tenants/{tenant_id}/orders/",
-            headers={"api-key": api_key},
-            params={
-                k: v
-                for k, v in {
-                    "page": page,
-                    "cursor_created_at": cursor_created_at.isoformat()
-                    if cursor_created_at
-                    else None,
-                    "cursor_id": cursor_id,
-                    "status": status,
-                    "limit": limit,
-                }.items()
-                if v is not None
-            },
-        )
-
-        print(response.json())
+        try:
+            response = client.get(
+                f"http://localhost:8000/tenants/{tenant_id}/orders/",
+                headers={"api-key": api_key},
+                params={
+                    k: v
+                    for k, v in {
+                        "page": page,
+                        "cursor_created_at": cursor_created_at.isoformat()
+                        if cursor_created_at
+                        else None,
+                        "cursor_id": cursor_id,
+                        "status": status,
+                        "limit": limit,
+                    }.items()
+                    if v is not None
+                },
+            )
+        except httpx.RequestError as e:
+            typer.echo(f"Connection Error: {e}", err=True)
+            raise typer.Exit(code=1)
+        _handle_response(response)
