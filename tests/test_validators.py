@@ -1,6 +1,7 @@
-from pydantic import ValidationError
-from schemas.tenant import TenantConfig
 import pytest
+from pydantic import ValidationError
+
+from schemas.tenant import TenantConfig
 
 
 def test_valid_config() -> None:

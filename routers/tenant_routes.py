@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends
-from schemas.tenant import TenantResponse, TenantCreate
-from services.tenant_services import create_tenant
-from dependencies.db import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from dependencies.db import get_db
+from schemas.tenant import TenantCreate, TenantResponse
+from services.tenant_services import create_tenant
 
 tenant_router = APIRouter()
 

@@ -1,5 +1,5 @@
-from sqlalchemy.ext.asyncio import AsyncSession
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.tenant import Tenant
 

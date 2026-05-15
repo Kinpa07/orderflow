@@ -1,7 +1,8 @@
-from models.tenant import Tenant
-from fastapi import Depends, HTTPException, Header, Request
-from dependencies.db import get_db
+from fastapi import Depends, Header, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from dependencies.db import get_db
+from models.tenant import Tenant
 from repositories.tenant_repository import get_tenant_by_api_key
 
 

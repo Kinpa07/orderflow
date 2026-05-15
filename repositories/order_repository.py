@@ -1,10 +1,11 @@
 from collections.abc import Sequence
-
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_, and_
 from datetime import datetime
-from models.order_status import OrderStatus
+
+from sqlalchemy import and_, or_, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from models.order import Order
+from models.order_status import OrderStatus
 from models.order_status_history import OrderStatusHistory
 
 

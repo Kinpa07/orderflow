@@ -66,7 +66,7 @@ async def order_id(client: AsyncClient, tenant_credentials: tuple[str, int]) -> 
         json={"price": 50.0},
         headers={"api-key": api_key},
     )
-    return order_response.json()["id"]
+    return int(order_response.json()["id"])
 
 
 @pytest_asyncio.fixture

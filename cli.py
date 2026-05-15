@@ -72,8 +72,10 @@ def submit(
     ),
     data: str = typer.Option(
         ...,
-        help=('data for the order, currenlty only price is supported, '
-        'format: {"price": 50.0}'),
+        help=(
+            "data for the order, currenlty only price is supported, "
+            'format: {"price": 50.0}'
+        ),
     ),
     api_key: str = typer.Option(
         ...,

@@ -1,6 +1,8 @@
-from pydantic import BaseModel, ConfigDict
-from models.order_status import OrderStatus
 from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict
+
+from models.order_status import OrderStatus
 
 
 class OrderCreate(BaseModel):

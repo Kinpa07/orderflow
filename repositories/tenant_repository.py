@@ -1,7 +1,7 @@
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.tenant import Tenant
-from sqlalchemy.ext.asyncio import AsyncSession
 
 
 async def get_tenant(tenant_id: int, db: AsyncSession) -> Tenant | None:

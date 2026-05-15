@@ -1,10 +1,10 @@
-from sqlalchemy.ext.asyncio import AsyncSession
 from httpx import AsyncClient
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.order import Order
 from models.order_status import OrderStatus
 from models.order_status_history import OrderStatusHistory
-from sqlalchemy import select
 
 
 async def test_create_order(
