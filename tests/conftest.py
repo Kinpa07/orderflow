@@ -1,18 +1,18 @@
 import os
 from collections.abc import AsyncGenerator
 
-from dotenv import load_dotenv
+import pytest_asyncio
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
+from sqlalchemy.pool import NullPool
 
-load_dotenv(".env.test", override=True)
-
-import pytest_asyncio  # noqa: E402
-from httpx import ASGITransport, AsyncClient  # noqa: E402
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine  # noqa: E402
-from sqlalchemy.pool import NullPool  # noqa: E402
-
-from dependencies.db import get_db  # noqa: E402
-from main import app  # noqa: E402
-from models.base import Base  # noqa: E402
+from dependencies.db import get_db
+from main import app
+from models.base import Base
 
 DATABASE_URL = os.environ["DATABASE_URL"]
 
