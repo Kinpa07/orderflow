@@ -10,13 +10,15 @@ from models.order_status_history import OrderStatusHistory
 
 async def add_order(order: Order, db: AsyncSession) -> Order:
     db.add(order)
-    await db.flush() 
+    await db.flush()
     return order
+
 
 async def add_order_history(order: Order, db: AsyncSession) -> None:
     history = OrderStatusHistory(order_id=order.id, status=order.status)
     db.add(history)
     await db.flush()
+
 
 async def list_orders(
     tenant_id: int,
@@ -52,9 +54,8 @@ async def list_orders(
 
     return response
 
-async def fetch_order(tenant_id: int, order_id: int, db: AsyncSession) -> Order:
-    stmt = select(Order).where(
-        and_(Order.tenant_id == tenant_id, Order.id == order_id)
-    )
+
+async def fetch_order(tenant_id: int, order_id: int, db: AsyncSession) -> Order | None:
+    stmt = select(Order).where(and_(Order.tenant_id == tenant_id, Order.id == order_id))
     response = (await db.execute(stmt)).scalars().first()
     return response

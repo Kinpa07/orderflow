@@ -134,7 +134,9 @@ def list_orders(
                 k: v
                 for k, v in {
                     "page": page,
-                    "cursor_created_at": (cursor_created_at),
+                    "cursor_created_at": cursor_created_at.isoformat()
+                    if cursor_created_at
+                    else None,
                     "cursor_id": cursor_id,
                     "status": status,
                     "limit": limit,

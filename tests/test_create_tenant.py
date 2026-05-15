@@ -25,7 +25,7 @@ async def test_create_tenant(client: AsyncClient, db_session: AsyncSession) -> N
             "config": {"maximum_price": 100.0},
         },
     )
-    
+
     assert tenant_response.status_code == 200
     assert "id" in tenant_response.json()
     assert "api_key" in tenant_response.json()
@@ -37,7 +37,3 @@ async def test_create_tenant(client: AsyncClient, db_session: AsyncSession) -> N
     assert record.phone == "1234567890"
     assert record.config["maximum_price"] == 100.0
     assert record.api_key == tenant_response.json()["api_key"]
-
-
-
-
