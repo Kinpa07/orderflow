@@ -4,7 +4,7 @@ from models.order_status import OrderStatus
 from models.order import Order
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from repositories.order_repository import add_order, list_orders, add_order_history
+from repositories.order_repository import add_order, list_orders, add_order_history, fetch_order
 from repositories.tenant_repository import get_tenant
 
 
@@ -60,3 +60,15 @@ async def list_order(
         next_cursor=next_cursor,
         next_cursor_created_at=next_cursor_created_at,
     )
+
+async def get_order(
+    tenant_id: int, order_id: int, db: AsyncSession
+) -> OrderResponse:
+    
+    response = await fetch_order(tenant_id, order_id, db)
+
+    if not response:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+
+    return OrderResponse.model_validate(response)

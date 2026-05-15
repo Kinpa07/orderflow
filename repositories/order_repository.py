@@ -51,3 +51,10 @@ async def list_orders(
         response = (await db.execute(stmt)).scalars().all()
 
     return response
+
+async def fetch_order(tenant_id: int, order_id: int, db: AsyncSession) -> Order:
+    stmt = select(Order).where(
+        and_(Order.tenant_id == tenant_id, Order.id == order_id)
+    )
+    response = (await db.execute(stmt)).scalars().first()
+    return response
