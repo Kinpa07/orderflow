@@ -59,6 +59,17 @@ async def tenant_credentials(client: AsyncClient) -> tuple[str, int]:
 
 
 @pytest_asyncio.fixture
+async def order_id(client: AsyncClient, tenant_credentials: tuple[str, int]) -> int:
+    api_key, tenant_id = tenant_credentials
+    order_response = await client.post(
+        f"/tenants/{tenant_id}/orders/",
+        json={"price": 50.0},
+        headers={"api-key": api_key},
+    )
+    return order_response.json()["id"]
+
+
+@pytest_asyncio.fixture
 async def client() -> AsyncGenerator[AsyncClient, None]:
     async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
         async with TestSessionLocal() as session:
