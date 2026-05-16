@@ -1,6 +1,7 @@
 from httpx import AsyncClient
 
 from schemas.tenant import TenantResponse
+from tests.conftest import make_tenant
 
 
 async def test_create_tenant(
@@ -8,13 +9,7 @@ async def test_create_tenant(
 ) -> None:
     tenant_response = await client.post(
         "/tenants/",
-        json={
-            "company_name": "Test Company",
-            "contact_name": "John Doe",
-            "email": "john.doe@testcompany.com",
-            "phone": "1234567890",
-            "config": {"maximum_price": 100.0},
-        },
+        json=make_tenant().model_dump(),
     )
 
     assert tenant_response.status_code == 200

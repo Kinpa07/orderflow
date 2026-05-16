@@ -2,19 +2,14 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.tenant import Tenant
+from tests.conftest import make_tenant
 
 
 async def test_create_tenant(client: AsyncClient, db_session: AsyncSession) -> None:
 
     tenant_response = await client.post(
         "/tenants/",
-        json={
-            "company_name": "Test Company",
-            "contact_name": "John Doe",
-            "email": "john.doe@testcompany.com",
-            "phone": "1234567890",
-            "config": {"maximum_price": 100.0},
-        },
+        json=make_tenant().model_dump(),
     )
 
 

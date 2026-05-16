@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.order import Order
 from models.order_status import OrderStatus
+from tests.conftest import make_order
 
 
 async def test_create_order(
@@ -11,7 +12,7 @@ async def test_create_order(
     api_key, tena_id = tenant_credentials
     order_response = await client.post(
         f"/tenants/{tena_id}/orders/",
-        json={"price": 50.0},
+        json=make_order().model_dump(),
         headers={"api-key": api_key},
     )
 
