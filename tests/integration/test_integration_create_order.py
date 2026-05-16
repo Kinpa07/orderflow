@@ -1,9 +1,9 @@
+from conftest import make_order
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.order import Order
 from models.order_status import OrderStatus
-from tests.conftest import make_order
 
 
 async def test_create_order(

@@ -13,8 +13,8 @@ from sqlalchemy.pool import NullPool
 from dependencies.db import get_db
 from main import app
 from models.base import Base
-from schemas.order import OrderCreate, OrderResponseList
-from schemas.tenant import TenantCreate
+from schemas.order import OrderCreate
+from schemas.tenant import TenantConfig, TenantCreate
 
 DATABASE_URL = os.environ["DATABASE_URL"]
 
@@ -30,7 +30,7 @@ def make_tenant() -> TenantCreate:
         contact_name="John Doe",
         email="john.doe@testcompany.com",
         phone="1234567890",
-        config={"maximum_price": 100.0},
+        config=TenantConfig(maximum_price=100.0),
     )
 
 

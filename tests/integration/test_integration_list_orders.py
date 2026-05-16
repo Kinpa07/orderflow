@@ -1,12 +1,12 @@
 from datetime import datetime
 
+from conftest import make_orders
 from httpx import AsyncClient
-from sqlalchemy import and_, or_, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.order import Order
 from models.order_status import OrderStatus
-from tests.conftest import make_orders
 
 
 async def test_list_orders(
@@ -25,13 +25,13 @@ async def test_list_orders(
         },
     )
 
-    db_orders = (
+    stmt = (
         select(Order)
         .where(Order.tenant_id == tenant_id)
         .order_by(Order.created_at, Order.id)
         .limit(20)
     )
-    db_orders = (await db_session.execute(db_orders)).scalars().all()
+    db_orders = (await db_session.execute(stmt)).scalars().all()
 
     assert len(db_orders) == len(orders_response.json()["orders"])
     assert orders_response.json()["next_cursor"] is not None

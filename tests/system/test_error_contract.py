@@ -1,7 +1,6 @@
 import httpx
+from conftest import make_order
 from httpx import AsyncClient
-
-from tests.conftest import make_order
 
 
 def assert_error_shape(response: httpx.Response) -> None:

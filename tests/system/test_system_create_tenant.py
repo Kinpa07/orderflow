@@ -1,7 +1,7 @@
+from conftest import make_tenant
 from httpx import AsyncClient
 
 from schemas.tenant import TenantResponse
-from tests.conftest import make_tenant
 
 
 async def test_create_tenant(

@@ -20,6 +20,7 @@ async def create_order(
 ) -> OrderResponse:
 
     curr_tenant = await get_tenant(tenant_id, db)
+    assert curr_tenant is not None
 
     max_price = curr_tenant.config["maximum_price"]
 

@@ -1,8 +1,8 @@
 import pytest
+from conftest import make_order
 from httpx import AsyncClient
 
 from schemas.order import OrderResponse
-from tests.conftest import make_order
 
 
 async def test_create_order(
@@ -35,8 +35,11 @@ async def test_create_order(
     ],
 )
 async def test_price_expected_status(
-    client: AsyncClient, tenant_credentials: tuple[str, int], price, expected_status
-):
+    client: AsyncClient,
+    tenant_credentials: tuple[str, int],
+    price: float | None,
+    expected_status: int,
+) -> None:
 
     body = {} if price is None else {"price": price}
     api_key, tena_id = tenant_credentials

@@ -1,8 +1,8 @@
+from conftest import make_tenant
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.tenant import Tenant
-from tests.conftest import make_tenant
 
 
 async def test_create_tenant(client: AsyncClient, db_session: AsyncSession) -> None:
