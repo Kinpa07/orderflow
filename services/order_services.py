@@ -21,9 +21,6 @@ async def create_order(
 
     curr_tenant = await get_tenant(tenant_id, db)
 
-    if not curr_tenant:
-        raise HTTPException(status_code=404, detail="Tenant not found")
-
     max_price = curr_tenant.config["maximum_price"]
 
     if (

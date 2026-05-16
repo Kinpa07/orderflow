@@ -49,3 +49,4 @@ async def test_create_tenant_invalid_body_returns_422(client: AsyncClient) -> No
     assert response.status_code == 422
     assert_error_shape(response)
     assert all("loc" in d and "msg" in d for d in response.json()["error"]["details"])
+

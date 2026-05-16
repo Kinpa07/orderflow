@@ -13,7 +13,7 @@ from sqlalchemy.pool import NullPool
 from dependencies.db import get_db
 from main import app
 from models.base import Base
-from schemas.order import OrderCreate
+from schemas.order import OrderCreate, OrderResponseList
 from schemas.tenant import TenantCreate
 
 DATABASE_URL = os.environ["DATABASE_URL"]
@@ -36,6 +36,15 @@ def make_tenant() -> TenantCreate:
 
 def make_order() -> OrderCreate:
     return OrderCreate(price=50.0)
+
+
+async def make_orders(client: AsyncClient, tenant_credentials: tuple[str, int]) -> None:
+    for _ in range(21):
+        _response = await client.post(
+            f"/tenants/{tenant_credentials[1]}/orders/",
+            json=OrderCreate(price=50.0 + _).model_dump(),
+            headers={"api-key": tenant_credentials[0]},
+        )
 
 
 @pytest_asyncio.fixture(scope="session", autouse=True)
