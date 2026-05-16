@@ -38,3 +38,10 @@ async def test_price_exceeds_maximum(
     )
     assert response.status_code == 400
     assert_error_shape(response)
+
+
+async def test_create_tenant_invalid_body_returns_422(client: AsyncClient) -> None:
+    response = await client.post("/tenants/", json={"company_name": "Test Company"})
+    assert response.status_code == 422
+    assert_error_shape(response)
+    assert all("loc" in d and "msg" in d for d in response.json()["error"]["details"])
