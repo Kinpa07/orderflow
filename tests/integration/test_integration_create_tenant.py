@@ -1,11 +1,17 @@
-from conftest import make_tenant
+from collections.abc import Callable
+
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.tenant import Tenant
+from schemas.tenant import TenantCreate
 
 
-async def test_create_tenant(client: AsyncClient, db_session: AsyncSession) -> None:
+async def test_create_tenant(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    make_tenant: Callable[..., TenantCreate],
+) -> None:
 
     tenant_response = await client.post(
         "/tenants/",

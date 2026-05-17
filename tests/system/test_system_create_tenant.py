@@ -1,11 +1,13 @@
-from conftest import make_tenant
+from collections.abc import Callable
+
 from httpx import AsyncClient
 
-from schemas.tenant import TenantResponse
+from schemas.tenant import TenantCreate, TenantResponse
 
 
 async def test_create_tenant(
     client: AsyncClient,
+    make_tenant: Callable[..., TenantCreate],
 ) -> None:
     tenant_response = await client.post(
         "/tenants/",

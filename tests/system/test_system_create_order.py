@@ -1,12 +1,15 @@
+from collections.abc import Callable
+
 import pytest
-from conftest import make_order
 from httpx import AsyncClient
 
-from schemas.order import OrderResponse
+from schemas.order import OrderCreate, OrderResponse
 
 
 async def test_create_order(
-    client: AsyncClient, tenant_credentials: tuple[str, int]
+    client: AsyncClient,
+    tenant_credentials: tuple[str, int],
+    make_order: Callable[..., OrderCreate],
 ) -> None:
     api_key, tena_id = tenant_credentials
     order_response = await client.post(

@@ -1,6 +1,6 @@
+from collections.abc import Awaitable, Callable
 from datetime import datetime
 
-from conftest import make_orders
 from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,10 +10,13 @@ from models.order_status import OrderStatus
 
 
 async def test_list_orders(
-    client: AsyncClient, db_session: AsyncSession, tenant_credentials: tuple[str, int]
+    client: AsyncClient,
+    db_session: AsyncSession,
+    tenant_credentials: tuple[str, int],
+    make_orders: Callable[..., Awaitable[None]],
 ) -> None:
 
-    await make_orders(client, tenant_credentials)
+    await make_orders()
 
     api_key, tenant_id = tenant_credentials
     orders_response = await client.get(
@@ -46,10 +49,13 @@ async def test_list_orders(
 
 
 async def test_list_orders_with_status(
-    client: AsyncClient, db_session: AsyncSession, tenant_credentials: tuple[str, int]
+    client: AsyncClient,
+    db_session: AsyncSession,
+    tenant_credentials: tuple[str, int],
+    make_orders: Callable[..., Awaitable[None]],
 ) -> None:
 
-    await make_orders(client, tenant_credentials)
+    await make_orders()
     api_key, tenant_id = tenant_credentials
 
     stmt = (
@@ -81,7 +87,6 @@ async def test_list_orders_with_status(
         },
     )
 
-    print(orders_response.json())
     assert count == len(orders_response.json()["orders"])
     assert orders_response.json()["next_cursor"] is None
     assert orders_response.json()["next_cursor_created_at"] is None
@@ -92,9 +97,11 @@ async def test_list_orders_with_status(
 
 
 async def test_list_orders_with_cursor(
-    client: AsyncClient, tenant_credentials: tuple[str, int]
+    client: AsyncClient,
+    tenant_credentials: tuple[str, int],
+    make_orders: Callable[..., Awaitable[None]],
 ) -> None:
-    await make_orders(client, tenant_credentials)
+    await make_orders()
     api_key, tenant_id = tenant_credentials
 
     get_cursor_response = await client.get(

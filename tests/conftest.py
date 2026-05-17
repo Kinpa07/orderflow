@@ -1,6 +1,8 @@
 import os
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Awaitable, Callable
+from typing import Any
 
+import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import (
@@ -24,27 +26,47 @@ TestSessionLocal = async_sessionmaker(
 )
 
 
-def make_tenant() -> TenantCreate:
-    return TenantCreate(
-        company_name="Test Company",
-        contact_name="John Doe",
-        email="john.doe@testcompany.com",
-        phone="1234567890",
-        config=TenantConfig(maximum_price=100.0),
-    )
+@pytest.fixture()
+def make_tenant() -> Callable[..., TenantCreate]:
+    def _make(**overrides: Any) -> TenantCreate:
+        defaults: dict[str, Any] = {
+            "company_name": "Test Company",
+            "contact_name": "John Doe",
+            "email": "john.doe@testcompany.com",
+            "phone": "1234567890",
+            "config": TenantConfig(maximum_price=100.0),
+        }
+        defaults.update(overrides)
+        return TenantCreate(**defaults)
+
+    return _make
 
 
-def make_order() -> OrderCreate:
-    return OrderCreate(price=50.0)
+@pytest.fixture()
+def make_order() -> Callable[..., OrderCreate]:
+    def _make(**overrides: Any) -> OrderCreate:
+        defaults = {
+            "price": 50.0,
+        }
+        defaults.update(overrides)
+        return OrderCreate(**defaults)
+
+    return _make
 
 
-async def make_orders(client: AsyncClient, tenant_credentials: tuple[str, int]) -> None:
-    for _ in range(21):
-        _response = await client.post(
-            f"/tenants/{tenant_credentials[1]}/orders/",
-            json=OrderCreate(price=50.0 + _).model_dump(),
-            headers={"api-key": tenant_credentials[0]},
-        )
+@pytest_asyncio.fixture()
+async def make_orders(
+    client: AsyncClient, tenant_credentials: tuple[str, int]
+) -> Callable[[int], Awaitable[None]]:
+    async def _make(count: int = 21) -> None:
+        for i in range(count):
+            await client.post(
+                f"/tenants/{tenant_credentials[1]}/orders/",
+                json=OrderCreate(price=50.0 + i).model_dump(),
+                headers={"api-key": tenant_credentials[0]},
+            )
+
+    return _make
 
 
 @pytest_asyncio.fixture(scope="session", autouse=True)
@@ -69,7 +91,9 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 @pytest_asyncio.fixture
-async def tenant_credentials(client: AsyncClient) -> tuple[str, int]:
+async def tenant_credentials(
+    client: AsyncClient, make_tenant: Callable[..., TenantCreate]
+) -> tuple[str, int]:
     response = await client.post(
         "/tenants/",
         json=make_tenant().model_dump(),
@@ -78,7 +102,11 @@ async def tenant_credentials(client: AsyncClient) -> tuple[str, int]:
 
 
 @pytest_asyncio.fixture
-async def order_id(client: AsyncClient, tenant_credentials: tuple[str, int]) -> int:
+async def order_id(
+    client: AsyncClient,
+    tenant_credentials: tuple[str, int],
+    make_order: Callable[..., OrderCreate],
+) -> int:
     api_key, tenant_id = tenant_credentials
     order_response = await client.post(
         f"/tenants/{tenant_id}/orders/",

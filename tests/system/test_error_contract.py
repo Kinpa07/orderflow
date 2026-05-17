@@ -1,6 +1,9 @@
+from collections.abc import Callable
+
 import httpx
-from conftest import make_order
 from httpx import AsyncClient
+
+from schemas.order import OrderCreate
 
 
 def assert_error_shape(response: httpx.Response) -> None:
@@ -11,16 +14,20 @@ def assert_error_shape(response: httpx.Response) -> None:
     assert "details" in body["error"]
 
 
-async def test_no_authentication(client: AsyncClient) -> None:
+async def test_no_authentication(
+    client: AsyncClient, make_order: Callable[..., OrderCreate]
+) -> None:
     response = await client.post("/tenants/1/orders/", json=make_order().model_dump())
     assert response.status_code == 401
     assert_error_shape(response)
 
 
 async def test_tenant_id_missmatch(
-    client: AsyncClient, tenant_credentials: tuple[str, int]
+    client: AsyncClient,
+    tenant_credentials: tuple[str, int],
+    make_order: Callable[..., OrderCreate],
 ) -> None:
-    api_key, tenant_id = tenant_credentials
+    api_key, _ = tenant_credentials
     response = await client.post(
         "/tenants/15/orders/",
         json=make_order().model_dump(),

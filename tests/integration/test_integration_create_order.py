@@ -1,13 +1,18 @@
-from conftest import make_order
+from collections.abc import Callable
+
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.order import Order
 from models.order_status import OrderStatus
+from schemas.order import OrderCreate
 
 
 async def test_create_order(
-    client: AsyncClient, db_session: AsyncSession, tenant_credentials: tuple[str, int]
+    client: AsyncClient,
+    db_session: AsyncSession,
+    tenant_credentials: tuple[str, int],
+    make_order: Callable[..., OrderCreate],
 ) -> None:
     api_key, tena_id = tenant_credentials
     order_response = await client.post(
