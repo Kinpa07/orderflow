@@ -34,7 +34,7 @@ async def test_two_tenants_same_order(
     tenant_credentials: tuple[str, int],
     order_id: int,
 ) -> None:
-    api_key, tena_id = tenant_credentials
+    _, tena_id = tenant_credentials
 
     second_tenant_response = await client.post(
         "/tenants/",

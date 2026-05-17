@@ -60,5 +60,5 @@ async def create_orders(
 ) -> OrderResponse:
     if tenant.id != tenant_id:
         raise HTTPException(status_code=403, detail="Forbidden: Tenant ID mismatch")
-    response = await create_order(tenant_id, order, db)
+    response = await create_order(tenant, order, db)
     return response
