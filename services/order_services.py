@@ -5,36 +5,30 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.order import Order
 from models.order_status import OrderStatus
+from models.tenant import Tenant
 from repositories.order_repository import (
     add_order,
     add_order_history,
     fetch_order,
     list_orders,
 )
-from repositories.tenant_repository import get_tenant
 from schemas.order import OrderCreate, OrderResponse, OrderResponseList
 
 
 async def create_order(
-    tenant_id: int, order: OrderCreate, db: AsyncSession
+    tenant: Tenant, order: OrderCreate, db: AsyncSession
 ) -> OrderResponse:
 
-    curr_tenant = await get_tenant(tenant_id, db)
-    assert curr_tenant is not None
+    maximum_price = tenant.config.get("maximum_price")
 
-    max_price = curr_tenant.config["maximum_price"]
-
-    if (
-        curr_tenant.config.get("maximum_price") is not None
-        and order.price > curr_tenant.config["maximum_price"]
-    ):
+    if maximum_price is not None and order.price > maximum_price:
         raise HTTPException(
             status_code=400,
-            detail=f"Price exceeds maximum allowed price of {max_price}",
+            detail=f"Price exceeds maximum allowed price of {maximum_price}",
         )
 
     result = Order(
-        tenant_id=tenant_id,
+        tenant_id=tenant.id,
         price=order.price,
     )
 
