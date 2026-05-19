@@ -6,7 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.order import Order
 from models.order_status import OrderStatus
-from models.tenant import Tenant
 from repositories.order_repository import (
     add_order,
     add_order_history,
@@ -14,13 +13,14 @@ from repositories.order_repository import (
     list_orders,
 )
 from schemas.order import OrderCreate, OrderResponse, OrderResponseList
+from schemas.tenant import TenantResponse
 
 
 async def create_order(
-    tenant: Tenant, order: OrderCreate, db: AsyncSession, redis: Redis
+    tenant: TenantResponse, order: OrderCreate, db: AsyncSession, redis: Redis
 ) -> OrderResponse:
 
-    maximum_price = tenant.config.get("maximum_price")
+    maximum_price = tenant.config.maximum_price
 
     if maximum_price is not None and order.price > maximum_price:
         raise HTTPException(

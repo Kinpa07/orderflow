@@ -6,7 +6,6 @@ from dependencies.auth import verify_api_key
 from dependencies.db import get_db
 from dependencies.rate_limit import rate_limit
 from dependencies.redis import get_redis
-from models.tenant import Tenant
 from schemas.tenant import TenantCreate, TenantResponse, TenantUpdate
 from services.tenant_services import create_tenant, modify_tenant
 
@@ -25,7 +24,7 @@ async def create_tenants(
 async def update_tenants(
     tenant_id: int,
     update: TenantUpdate,
-    tenant: Tenant = Depends(verify_api_key),
+    tenant: TenantResponse = Depends(verify_api_key),
     db: AsyncSession = Depends(get_db),
     redis: Redis = Depends(get_redis),
     _: bool = Depends(rate_limit),

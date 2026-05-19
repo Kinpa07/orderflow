@@ -9,7 +9,7 @@ from dependencies.db import get_db
 from dependencies.rate_limit import rate_limit
 from dependencies.redis import get_redis
 from models.order_status import OrderStatus
-from models.tenant import Tenant
+from schemas.tenant import TenantResponse
 from schemas.order import OrderCreate, OrderResponse, OrderResponseList
 from services.order_services import create_order, get_order, list_order
 
@@ -25,7 +25,7 @@ async def list_orders(
     cursor_id: int | None = None,
     status: OrderStatus | None = None,
     limit: int = 20,
-    tenant: Tenant = Depends(verify_api_key),
+    tenant: TenantResponse = Depends(verify_api_key),
     _: bool = Depends(rate_limit),
 ) -> OrderResponseList:
     if tenant.id != tenant_id:
@@ -47,7 +47,7 @@ async def get_order_status(
     tenant_id: int,
     order_id: int,
     db: AsyncSession = Depends(get_db),
-    tenant: Tenant = Depends(verify_api_key),
+    tenant: TenantResponse = Depends(verify_api_key),
     _: bool = Depends(rate_limit),
 ) -> OrderResponse:
     if tenant.id != tenant_id:
@@ -60,7 +60,7 @@ async def get_order_status(
 async def create_orders(
     tenant_id: int,
     order: OrderCreate,
-    tenant: Tenant = Depends(verify_api_key),
+    tenant: TenantResponse = Depends(verify_api_key),
     db: AsyncSession = Depends(get_db),
     _: bool = Depends(rate_limit),
     redis: Redis = Depends(get_redis),

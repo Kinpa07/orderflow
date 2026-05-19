@@ -16,7 +16,7 @@ async def create_tenant(tenant: TenantCreate, db: AsyncSession) -> TenantRespons
 
 
 async def modify_tenant(
-    tenant: Tenant, update: TenantUpdate, db: AsyncSession, redis: Redis
+    tenant: TenantResponse, update: TenantUpdate, db: AsyncSession, redis: Redis
 ) -> TenantResponse:
 
     refreshed = await get_tenant(tenant.id, db)
