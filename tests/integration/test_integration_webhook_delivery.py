@@ -3,9 +3,11 @@ import hmac
 import json
 from collections.abc import Callable
 from typing import Any
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
-from httpx import AsyncClient
+import httpx
+from fastapi import FastAPI, Request
+from httpx import ASGITransport, AsyncClient
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,23 +30,22 @@ async def test_webhook_delivery_sends_signed_payload(
     api_key = tenant_response.json()["api_key"]
     tenant_id = tenant_response.json()["id"]
 
+    receiver = FastAPI()
     captured: list[dict[str, Any]] = []
 
-    async def mock_post(url: str, **kwargs: object) -> AsyncMock:
+    @receiver.post("/webhook")
+    async def capture(request: Request) -> dict[str, str]:
         captured.append(
-            {"url": url, "json": kwargs.get("json"), "headers": kwargs.get("headers")}
+            {"body": await request.body(), "headers": dict(request.headers)}
         )
-        mock_response = AsyncMock()
-        mock_response.status_code = 200
-        return mock_response
+        return {"status": "ok"}
 
-    with patch("order_processor.webhook.httpx.AsyncClient") as mock_client_class:
-        mock_instance = AsyncMock()
-        mock_instance.post = mock_post
-        mock_instance.__aenter__ = AsyncMock(return_value=mock_instance)
-        mock_instance.__aexit__ = AsyncMock(return_value=None)
-        mock_client_class.return_value = mock_instance
+    real_async_client = httpx.AsyncClient
 
+    def make_asgi_client() -> httpx.AsyncClient:
+        return real_async_client(transport=ASGITransport(app=receiver))
+
+    with patch("order_processor.webhook.httpx.AsyncClient", make_asgi_client):
         from order_processor.webhook import deliver_webhook
 
         tenant = Tenant(
@@ -59,19 +60,16 @@ async def test_webhook_delivery_sends_signed_payload(
         )
         order = Order(
             id=1, tenant_id=tenant_id, price=50.0,
-            status=OrderStatus.PROCESSING, priority=4
+            status=OrderStatus.PROCESSING, priority=4,
         )
 
         await deliver_webhook(tenant, order)
 
     assert len(captured) == 1
-    payload = captured[0]["json"]
+    body_bytes = captured[0]["body"]
+    payload = json.loads(body_bytes)
     assert payload["order_id"] == 1
     assert payload["status"] == "processing"
 
-    expected_sig = hmac.new(
-        api_key.encode(),
-        json.dumps(payload).encode(),
-        hashlib.sha256,
-    ).hexdigest()
-    assert captured[0]["headers"]["X-Signature"] == expected_sig
+    expected_sig = hmac.new(api_key.encode(), body_bytes, hashlib.sha256).hexdigest()
+    assert captured[0]["headers"]["x-signature"] == expected_sig
