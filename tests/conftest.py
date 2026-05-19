@@ -5,6 +5,7 @@ from typing import Any
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -13,10 +14,13 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.pool import NullPool
 
 from dependencies.db import get_db
+from dependencies.redis import get_redis
 from main import app
 from models.base import Base
 from schemas.order import OrderCreate
 from schemas.tenant import TenantConfig, TenantCreate
+
+REDIS_URL = os.environ["REDIS_URL"]
 
 DATABASE_URL = os.environ["DATABASE_URL"]
 
@@ -117,7 +121,15 @@ async def order_id(
 
 
 @pytest_asyncio.fixture
-async def client() -> AsyncGenerator[AsyncClient, None]:
+async def redis_client() -> AsyncGenerator[Redis, None]:
+    client = Redis.from_url(REDIS_URL, decode_responses=True)
+    yield client
+    await client.flushdb()
+    await client.aclose()
+
+
+@pytest_asyncio.fixture
+async def client(redis_client: Redis) -> AsyncGenerator[AsyncClient, None]:
     async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
         async with TestSessionLocal() as session:
             try:
@@ -127,7 +139,11 @@ async def client() -> AsyncGenerator[AsyncClient, None]:
                 await session.rollback()
                 raise
 
+    async def override_get_redis() -> Redis:
+        return redis_client
+
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_redis] = override_get_redis
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as ac:

@@ -15,7 +15,9 @@ class Order(Base):
     )
     price: Mapped[float] = mapped_column(Float, nullable=False)
     status: Mapped[OrderStatus] = mapped_column(
-        Enum(OrderStatus), nullable=False, default=OrderStatus.PENDING
+        Enum(OrderStatus, values_callable=lambda obj: [e.value for e in obj]),
+        nullable=False,
+        default=OrderStatus.PENDING,
     )
     priority: Mapped[int] = mapped_column(Integer, nullable=False, default=4)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

@@ -15,3 +15,5 @@ class Tenant(Base):
     phone: Mapped[str] = mapped_column(String, nullable=False)
     config: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     api_key: Mapped[str] = mapped_column(String, nullable=False)
+    webhook_url: Mapped[str | None] = mapped_column(String, nullable=True)
+
