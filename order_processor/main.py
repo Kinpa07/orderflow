@@ -24,43 +24,50 @@ async def consume_orders() -> None:
             count=1,
             block=0,
         )
-        for stream in messages:
-            for message in stream[1]:
-                async with AsyncSessionLocal() as session:
-                    order = await fetch_order(
-                        int(message[1]["tenant_id"]),
-                        int(message[1]["order_id"]),
-                        session,
-                    )
-                    tenant = await get_tenant(int(message[1]["tenant_id"]), session)
+        try:
+            for stream in messages:
+                for message in stream[1]:
+                    async with AsyncSessionLocal() as session:
+                        order = await fetch_order(
+                            int(message[1]["tenant_id"]),
+                            int(message[1]["order_id"]),
+                            session,
+                        )
+                        tenant = await get_tenant(int(message[1]["tenant_id"]), session)
 
-                    if order is None or tenant is None:
+                        if order is None or tenant is None:
+                            await redis_client.xack(
+                                "orders", "processing-group", message[0]
+                            )
+                            continue
+
+                        order.status = OrderStatus.PROCESSING
+                        await add_order_history(order, session)
+                        await session.flush()
+                        await session.commit()
+
+                        if tenant.webhook_url:
+                            await deliver_webhook(tenant, order)
+
+                        await asyncio.sleep(1)
+
+                        await session.refresh(order)
+
+                        order.status = OrderStatus.SHIPPED
+                        await add_order_history(order, session)
+                        await session.flush()
+                        await session.commit()
+
+                        if tenant.webhook_url:
+                            await deliver_webhook(tenant, order)
+
                         await redis_client.xack(
                             "orders", "processing-group", message[0]
                         )
-                        continue
 
-                    order.status = OrderStatus.PROCESSING
-                    await add_order_history(order, session)
-                    await session.flush()
-                    await session.commit()
-
-                    if tenant.webhook_url:
-                        await deliver_webhook(tenant, order)
-
-                    await asyncio.sleep(1)
-
-                    await session.refresh(order)
-
-                    order.status = OrderStatus.SHIPPED
-                    await add_order_history(order, session)
-                    await session.flush()
-                    await session.commit()
-
-                    if tenant.webhook_url:
-                        await deliver_webhook(tenant, order)
-
-                    await redis_client.xack("orders", "processing-group", message[0])
+        except Exception as e:
+            print(e)
+            continue
 
 
 @asynccontextmanager
