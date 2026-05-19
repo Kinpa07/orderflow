@@ -7,7 +7,6 @@ from datetime import UTC, datetime
 import httpx
 
 from config import WEBHOOK_RETRY_COUNT, WEBHOOK_TIMEOUT
-
 from db.session import AsyncSessionLocal
 from models.dead_letter_webhook import DeadLetterWebhook
 from models.order import Order

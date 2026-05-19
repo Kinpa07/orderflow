@@ -9,8 +9,8 @@ from dependencies.db import get_db
 from dependencies.rate_limit import rate_limit
 from dependencies.redis import get_redis
 from models.order_status import OrderStatus
-from schemas.tenant import TenantResponse
 from schemas.order import OrderCreate, OrderResponse, OrderResponseList
+from schemas.tenant import TenantResponse
 from services.order_services import create_order, get_order, list_order
 
 order_router = APIRouter()
