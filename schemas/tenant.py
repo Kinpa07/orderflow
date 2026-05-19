@@ -13,6 +13,7 @@ class TenantCreate(BaseModel):
     email: str
     phone: str
     config: TenantConfig
+    webhook_url: str | None = None
 
 
 class TenantResponse(BaseModel):
@@ -24,6 +25,7 @@ class TenantResponse(BaseModel):
     id: int
     api_key: str
     config: TenantConfig
+    webhook_url: str | None = None
 
 
 class TenantUpdate(BaseModel):
@@ -32,3 +34,4 @@ class TenantUpdate(BaseModel):
     email: str | None = None
     phone: str | None = None
     config: TenantConfig | None = None
+    webhook_url: str | None = None

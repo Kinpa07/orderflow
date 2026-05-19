@@ -9,7 +9,9 @@ from db.session import AsyncSessionLocal
 from models.order_status import OrderStatus
 from models.tenant import Tenant  # noqa: F401
 from order_processor.redis import redis_client
+from order_processor.webhook import deliver_webhook
 from repositories.order_repository import fetch_order
+from repositories.tenant_repository import get_tenant
 
 
 async def consume_orders():
@@ -29,9 +31,14 @@ async def consume_orders():
                         int(message[1]["order_id"]),
                         session,
                     )
+                    tenant = await get_tenant(int(message[1]["tenant_id"]), session)
+
                     setattr(order, "status", OrderStatus.PROCESSING)
                     await session.flush()
                     await session.commit()
+
+                    if tenant.webhook_url:
+                        await deliver_webhook(tenant, order)
 
                     await asyncio.sleep(1)
 
@@ -40,6 +47,9 @@ async def consume_orders():
                     setattr(order, "status", OrderStatus.SHIPPED)
                     await session.flush()
                     await session.commit()
+
+                    if tenant.webhook_url:
+                        await deliver_webhook(tenant, order)
 
                     await redis_client.xack("orders", "processing-group", message[0])
 

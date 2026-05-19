@@ -42,6 +42,7 @@ async def verify_api_key(
                 "phone": tenant.phone,
                 "config": tenant.config,
                 "api_key": tenant.api_key,
+                "webhook_url": tenant.webhook_url,
             },
             redis,
         )
