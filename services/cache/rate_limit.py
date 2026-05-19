@@ -9,7 +9,7 @@ async def check_rate_limit(
     ttl: int = 60,
 ) -> int:
     key = f"tenant:{api_key}:rate_limit:{datetime.now().strftime('%Y%m%d%H%M')}"
-    count = await redis.incr(key)
+    count = int(await redis.incr(key))
     if count == 1:
         await redis.expire(key, ttl)
     return count

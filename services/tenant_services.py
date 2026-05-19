@@ -19,13 +19,15 @@ async def modify_tenant(
     tenant: Tenant, update: TenantUpdate, db: AsyncSession, redis: Redis
 ) -> TenantResponse:
 
-    tenant = await get_tenant(tenant.id, db)
+    refreshed = await get_tenant(tenant.id, db)
+    if refreshed is None:
+        raise ValueError(f"Tenant {tenant.id} not found")
 
     update_dict = update.model_dump(exclude_unset=True)
     for key, value in update_dict.items():
-        setattr(tenant, key, value)
+        setattr(refreshed, key, value)
 
-    result = await update_tenant(tenant, db)
-    await invalidate_cache_on_update(tenant.api_key, redis)
+    result = await update_tenant(refreshed, db)
+    await invalidate_cache_on_update(refreshed.api_key, redis)
 
     return TenantResponse.model_validate(result)

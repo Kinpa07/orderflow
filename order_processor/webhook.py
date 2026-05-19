@@ -13,6 +13,8 @@ from models.tenant import Tenant
 
 
 async def deliver_webhook(tenant: Tenant, order: Order) -> None:
+    if not tenant.webhook_url:
+        return
     body = {
         "order_id": order.id,
         "tenant_id": order.tenant_id,
