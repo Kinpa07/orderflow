@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from datetime import datetime
 
 import httpx
@@ -180,3 +181,27 @@ def list_orders(
             typer.echo(f"Connection Error: {e}", err=True)
             raise typer.Exit(code=1)
         _handle_response(response)
+
+
+@orders_app.command(name="watch")
+def watch(
+    tenant_id: int = typer.Option(..., "--tenant", help="Tenant ID"),
+    api_key: str = typer.Option(..., help="API key"),
+) -> None:
+    with httpx.Client() as client:
+        try:
+            while True:
+                response = client.get(
+                    f"{BASE_URL}/tenants/{tenant_id}/orders/",
+                    headers={"api-key": api_key},
+                    params={"status": "processing"},
+                )
+                _handle_response(response)
+                time.sleep(2)
+
+        except httpx.RequestError as e:
+            typer.echo(f"Connection Error: {e}", err=True)
+            raise typer.Exit(code=1)
+
+        except KeyboardInterrupt:
+            raise typer.Exit(code=0)
