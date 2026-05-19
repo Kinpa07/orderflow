@@ -187,14 +187,16 @@ def list_orders(
 def watch(
     tenant_id: int = typer.Option(..., "--tenant", help="Tenant ID"),
     api_key: str = typer.Option(..., help="API key"),
+    status: str | None = typer.Option(None, help="Filter by status"),
 ) -> None:
     with httpx.Client() as client:
         try:
             while True:
+                params = {"status": status} if status else {}
                 response = client.get(
                     f"{BASE_URL}/tenants/{tenant_id}/orders/",
                     headers={"api-key": api_key},
-                    params={"status": "processing"},
+                    params=params,
                 )
                 _handle_response(response)
                 time.sleep(2)
