@@ -12,7 +12,9 @@ async def check_cache(api_key: str, redis: Redis) -> dict[str, Any] | None:
     return None
 
 
-async def cache_with_TTL(ttl: int, api_key: str, value: dict[str, Any], redis: Redis) -> None:
+async def cache_with_ttl(
+    ttl: int, api_key: str, value: dict[str, Any], redis: Redis
+) -> None:
     key = f"tenant:{api_key}:config"
     serialized = json.dumps(value)
     await redis.setex(key, ttl, serialized)

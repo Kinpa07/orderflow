@@ -7,7 +7,7 @@ from dependencies.redis import get_redis
 from models.tenant import Tenant
 from repositories.tenant_repository import get_tenant_by_api_key
 from services.cache.tenant_cache import (
-    cache_with_TTL,
+    cache_with_ttl,
     check_cache,
 )
 
@@ -31,7 +31,7 @@ async def verify_api_key(
         tenant = await get_tenant_by_api_key(api_key, db)
         if not tenant:
             raise HTTPException(status_code=401, detail="Invalid API key")
-        await cache_with_TTL(
+        await cache_with_ttl(
             60,
             api_key,
             {
