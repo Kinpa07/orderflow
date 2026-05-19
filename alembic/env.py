@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 from models.base import Base
+from models.dead_letter_webhook import DeadLetterWebhook  # noqa: F401
 from models.order import Order  # noqa: F401
 from models.order_status_history import OrderStatusHistory  # noqa: F401
 from models.tenant import Tenant  # noqa: F401
