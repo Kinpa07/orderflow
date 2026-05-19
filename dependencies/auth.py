@@ -2,6 +2,7 @@ from fastapi import Depends, Header, HTTPException, Request
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from config import TENANT_CACHE_TTL
 from dependencies.db import get_db
 from dependencies.redis import get_redis
 from repositories.tenant_repository import get_tenant_by_api_key
@@ -30,7 +31,7 @@ async def verify_api_key(
         if not db_tenant:
             raise HTTPException(status_code=401, detail="Invalid API key")
         await cache_with_ttl(
-            60,
+            TENANT_CACHE_TTL,
             api_key,
             {
                 "id": db_tenant.id,

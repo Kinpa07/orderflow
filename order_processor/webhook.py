@@ -6,6 +6,8 @@ from datetime import UTC, datetime
 
 import httpx
 
+from config import WEBHOOK_RETRY_COUNT, WEBHOOK_TIMEOUT
+
 from db.session import AsyncSessionLocal
 from models.dead_letter_webhook import DeadLetterWebhook
 from models.order import Order
@@ -32,7 +34,7 @@ async def deliver_webhook(tenant: Tenant, order: Order) -> None:
     ).hexdigest()
 
     last_error = "unknown error"
-    for attempt in range(3):
+    for attempt in range(WEBHOOK_RETRY_COUNT):
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.post(
@@ -42,7 +44,7 @@ async def deliver_webhook(tenant: Tenant, order: Order) -> None:
                         "X-Signature": signature,
                         "Content-Type": "application/json",
                     },
-                    timeout=5,
+                    timeout=WEBHOOK_TIMEOUT,
                 )
                 if response.status_code < 400:
                     return
