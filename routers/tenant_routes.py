@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from dependencies.auth import verify_api_key
 from dependencies.db import get_db
+from dependencies.rate_limit import rate_limit
 from dependencies.redis import get_redis
 from models.tenant import Tenant
 from schemas.tenant import TenantCreate, TenantResponse, TenantUpdate
@@ -27,6 +28,7 @@ async def update_tenants(
     tenant: Tenant = Depends(verify_api_key),
     db: AsyncSession = Depends(get_db),
     redis: Redis = Depends(get_redis),
+    _: bool = Depends(rate_limit),
 ) -> TenantResponse:
 
     if tenant.id != tenant_id:

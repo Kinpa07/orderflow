@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from dependencies.auth import verify_api_key
 from dependencies.db import get_db
+from dependencies.rate_limit import rate_limit
 from models.order_status import OrderStatus
 from models.tenant import Tenant
 from schemas.order import OrderCreate, OrderResponse, OrderResponseList
@@ -23,6 +24,7 @@ async def list_orders(
     status: OrderStatus | None = None,
     limit: int = 20,
     tenant: Tenant = Depends(verify_api_key),
+    _: bool = Depends(rate_limit),
 ) -> OrderResponseList:
     if tenant.id != tenant_id:
         raise HTTPException(status_code=403, detail="Forbidden: Tenant ID mismatch")
@@ -44,6 +46,7 @@ async def get_order_status(
     order_id: int,
     db: AsyncSession = Depends(get_db),
     tenant: Tenant = Depends(verify_api_key),
+    _: bool = Depends(rate_limit),
 ) -> OrderResponse:
     if tenant.id != tenant_id:
         raise HTTPException(status_code=403, detail="Forbidden: Tenant ID mismatch")
@@ -57,6 +60,7 @@ async def create_orders(
     order: OrderCreate,
     tenant: Tenant = Depends(verify_api_key),
     db: AsyncSession = Depends(get_db),
+    _: bool = Depends(rate_limit),
 ) -> OrderResponse:
     if tenant.id != tenant_id:
         raise HTTPException(status_code=403, detail="Forbidden: Tenant ID mismatch")
