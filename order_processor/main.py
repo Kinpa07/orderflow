@@ -6,10 +6,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from redis.exceptions import ResponseError
 
+from clients.redis import redis_client
 from db.session import AsyncSessionLocal
 from models.order_status import OrderStatus
 from models.tenant import Tenant  # noqa: F401
-from order_processor.redis import redis_client
 from order_processor.webhook import deliver_webhook
 from repositories.order_repository import add_order_history, fetch_order
 from repositories.tenant_repository import get_tenant
