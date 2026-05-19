@@ -47,7 +47,7 @@ async def consume_orders() -> None:
                         await session.commit()
 
                         if tenant.webhook_url:
-                            await deliver_webhook(tenant, order)
+                            create_task(deliver_webhook(tenant, order))
 
                         await asyncio.sleep(1)
 
@@ -59,7 +59,7 @@ async def consume_orders() -> None:
                         await session.commit()
 
                         if tenant.webhook_url:
-                            await deliver_webhook(tenant, order)
+                            create_task(deliver_webhook(tenant, order))
 
                         await redis_client.xack(
                             "orders", "processing-group", message[0]
