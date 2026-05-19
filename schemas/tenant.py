@@ -23,3 +23,12 @@ class TenantResponse(BaseModel):
     phone: str
     id: int
     api_key: str
+    config: TenantConfig
+
+
+class TenantUpdate(BaseModel):
+    company_name: str | None = None
+    contact_name: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    config: TenantConfig | None = None

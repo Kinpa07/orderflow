@@ -16,3 +16,12 @@ async def get_tenant_by_api_key(api_key: str, db: AsyncSession) -> Tenant | None
 async def add_tenant(tenant: Tenant, db: AsyncSession) -> None:
     db.add(tenant)
     await db.flush()
+
+
+async def update_tenant(
+    tenant: Tenant,
+    db: AsyncSession,
+) -> Tenant:
+
+    await db.flush()
+    return tenant
