@@ -30,22 +30,10 @@ async def verify_api_key(
         db_tenant = await get_tenant_by_api_key(api_key, db)
         if not db_tenant:
             raise HTTPException(status_code=401, detail="Invalid API key")
-        await cache_with_ttl(
-            TENANT_CACHE_TTL,
-            api_key,
-            {
-                "id": db_tenant.id,
-                "company_name": db_tenant.company_name,
-                "contact_name": db_tenant.contact_name,
-                "email": db_tenant.email,
-                "phone": db_tenant.phone,
-                "config": db_tenant.config,
-                "api_key": db_tenant.api_key,
-                "webhook_url": db_tenant.webhook_url,
-            },
-            redis,
-        )
         tenant = TenantResponse.model_validate(db_tenant)
+        await cache_with_ttl(
+            TENANT_CACHE_TTL, api_key, tenant.model_dump(mode="json"), redis
+        )
 
     request.state.tenant_id = tenant.id
     return tenant
