@@ -5,12 +5,15 @@ import json
 from datetime import UTC, datetime
 
 import httpx
+from structlog import get_logger
 
 from config import WEBHOOK_RETRY_COUNT, WEBHOOK_TIMEOUT
 from db.session import AsyncSessionLocal
 from models.dead_letter_webhook import DeadLetterWebhook
 from models.order import Order
 from models.tenant import Tenant
+
+logger = get_logger()
 
 
 async def deliver_webhook(tenant: Tenant, order: Order) -> None:
@@ -65,3 +68,14 @@ async def deliver_webhook(tenant: Tenant, order: Order) -> None:
             )
         )
         await session.commit()
+
+
+async def safe_deliver_webhook(tenant: Tenant, order: Order) -> None:
+    try:
+        await deliver_webhook(tenant, order)
+    except Exception:
+        logger.exception(
+            "webhook delivery raised",
+            tenant_id=tenant.id,
+            order_id=order.id,
+        )
