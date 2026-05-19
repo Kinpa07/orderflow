@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from fastapi import HTTPException
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.order import Order
@@ -16,7 +17,7 @@ from schemas.order import OrderCreate, OrderResponse, OrderResponseList
 
 
 async def create_order(
-    tenant: Tenant, order: OrderCreate, db: AsyncSession
+    tenant: Tenant, order: OrderCreate, db: AsyncSession, redis: Redis
 ) -> OrderResponse:
 
     maximum_price = tenant.config.get("maximum_price")
@@ -34,6 +35,9 @@ async def create_order(
 
     await add_order(result, db)
     await add_order_history(result, db)
+    await redis.xadd(
+        "orders", {"order_id": str(result.id), "tenant_id": str(tenant.id)}
+    )
     return OrderResponse.model_validate(result)
 
 

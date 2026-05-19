@@ -1,11 +1,13 @@
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from dependencies.auth import verify_api_key
 from dependencies.db import get_db
 from dependencies.rate_limit import rate_limit
+from dependencies.redis import get_redis
 from models.order_status import OrderStatus
 from models.tenant import Tenant
 from schemas.order import OrderCreate, OrderResponse, OrderResponseList
@@ -61,8 +63,9 @@ async def create_orders(
     tenant: Tenant = Depends(verify_api_key),
     db: AsyncSession = Depends(get_db),
     _: bool = Depends(rate_limit),
+    redis: Redis = Depends(get_redis),
 ) -> OrderResponse:
     if tenant.id != tenant_id:
         raise HTTPException(status_code=403, detail="Forbidden: Tenant ID mismatch")
-    response = await create_order(tenant, order, db)
+    response = await create_order(tenant, order, db, redis)
     return response
