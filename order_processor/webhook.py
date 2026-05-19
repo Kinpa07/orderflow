@@ -23,9 +23,11 @@ async def deliver_webhook(tenant: Tenant, order: Order) -> None:
         "timestamp": datetime.now(UTC).isoformat(),
     }
 
+    payload = json.dumps(body, separators=(",", ":")).encode()
+
     signature = hmac.new(
         key=tenant.api_key.encode(),
-        msg=json.dumps(body).encode(),
+        msg=payload,
         digestmod=hashlib.sha256,
     ).hexdigest()
 
@@ -35,8 +37,11 @@ async def deliver_webhook(tenant: Tenant, order: Order) -> None:
             async with httpx.AsyncClient() as client:
                 response = await client.post(
                     tenant.webhook_url,
-                    json=body,
-                    headers={"X-Signature": signature},
+                    content=payload,
+                    headers={
+                        "X-Signature": signature,
+                        "Content-Type": "application/json",
+                    },
                     timeout=5,
                 )
                 if response.status_code < 400:
@@ -49,11 +54,13 @@ async def deliver_webhook(tenant: Tenant, order: Order) -> None:
         await asyncio.sleep(2**attempt)
 
     async with AsyncSessionLocal() as session:
-        session.add(DeadLetterWebhook(
-            tenant_id=tenant.id,
-            order_id=order.id,
-            webhook_url=tenant.webhook_url,
-            payload=json.dumps(body),
-            error_message=last_error,
-        ))
+        session.add(
+            DeadLetterWebhook(
+                tenant_id=tenant.id,
+                order_id=order.id,
+                webhook_url=tenant.webhook_url,
+                payload=json.dumps(body),
+                error_message=last_error,
+            )
+        )
         await session.commit()
