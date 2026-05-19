@@ -1,3 +1,5 @@
+import os
+
 from fastapi import Depends, HTTPException
 from redis.asyncio import Redis
 
@@ -6,7 +8,7 @@ from dependencies.redis import get_redis
 from models.tenant import Tenant
 from services.cache.rate_limit import check_rate_limit
 
-RATE_LIMIT = 10
+RATE_LIMIT = int(os.environ.get("RATE_LIMIT", "15"))
 
 
 async def rate_limit(
