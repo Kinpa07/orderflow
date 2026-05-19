@@ -5,14 +5,17 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from redis.exceptions import ResponseError
+from structlog import get_logger
 
 from clients.redis import redis_client
 from db.session import AsyncSessionLocal
 from models.order_status import OrderStatus
 from models.tenant import Tenant  # noqa: F401
-from order_processor.webhook import deliver_webhook
+from order_processor.webhook import safe_deliver_webhook
 from repositories.order_repository import add_order_history, fetch_order
 from repositories.tenant_repository import get_tenant
+
+logger = get_logger()
 
 
 async def consume_orders() -> None:
@@ -47,7 +50,7 @@ async def consume_orders() -> None:
                         await session.commit()
 
                         if tenant.webhook_url:
-                            create_task(deliver_webhook(tenant, order))
+                            create_task(safe_deliver_webhook(tenant, order))
 
                         await asyncio.sleep(1)
 
@@ -59,15 +62,14 @@ async def consume_orders() -> None:
                         await session.commit()
 
                         if tenant.webhook_url:
-                            create_task(deliver_webhook(tenant, order))
+                            create_task(safe_deliver_webhook(tenant, order))
 
                         await redis_client.xack(
                             "orders", "processing-group", message[0]
                         )
 
-        except Exception as e:
-            print(e)
-            continue
+        except Exception:
+            logger.exception("consumer iteration failed")
 
 
 @asynccontextmanager
