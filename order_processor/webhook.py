@@ -22,7 +22,7 @@ from models.tenant import Tenant
 logger = get_logger()
 
 
-async def deliver_webhook(tenant: Tenant, order: Order) -> None:
+async def deliver_webhook(tenant: Tenant, order: Order, request_id: str) -> None:
     if not tenant.webhook_url:
         return
     body = {
@@ -51,6 +51,7 @@ async def deliver_webhook(tenant: Tenant, order: Order) -> None:
                     content=payload,
                     headers={
                         "X-Signature": signature,
+                        "X-Request-Id": request_id,
                         "Content-Type": "application/json",
                     },
                     timeout=WEBHOOK_TIMEOUT,
@@ -83,9 +84,9 @@ async def deliver_webhook(tenant: Tenant, order: Order) -> None:
         await session.commit()
 
 
-async def safe_deliver_webhook(tenant: Tenant, order: Order) -> None:
+async def safe_deliver_webhook(tenant: Tenant, order: Order, request_id: str) -> None:
     try:
-        await deliver_webhook(tenant, order)
+        await deliver_webhook(tenant, order, request_id)
     except Exception:
         logger.exception(
             "webhook delivery raised",

@@ -1,6 +1,7 @@
 import uuid
 from time import perf_counter
 
+import structlog.contextvars
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
@@ -19,16 +20,22 @@ class APIMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
+        if request.url.path.startswith("/metrics"):
+            return await call_next(request)
+
         method = request.method
         endpoint = request.url.path
         request_id = str(uuid.uuid4())
+
+        structlog.contextvars.clear_contextvars()
+        structlog.contextvars.bind_contextvars(request_id=request_id)
+        request.state.request_id = request_id
 
         http_requests_in_progress.labels(method=method, endpoint=endpoint).inc()
         start = perf_counter()
 
         logger.info(
             "Received request",
-            request_id=request_id,
             method=method,
             endpoint=endpoint,
         )
@@ -49,7 +56,6 @@ class APIMiddleware(BaseHTTPMiddleware):
 
         logger.info(
             "Sent response",
-            request_id=request_id,
             duration=duration,
             status_code=response.status_code,
             tenant_id=request.state.tenant_id

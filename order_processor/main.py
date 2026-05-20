@@ -4,6 +4,8 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from time import perf_counter
 
+import structlog
+import structlog.contextvars
 from fastapi import FastAPI
 from prometheus_client import make_asgi_app
 from redis.exceptions import ResponseError
@@ -17,6 +19,16 @@ from models.tenant import Tenant  # noqa: F401
 from order_processor.webhook import safe_deliver_webhook
 from repositories.order_repository import add_order_history, fetch_order
 from repositories.tenant_repository import get_tenant
+
+structlog.configure(
+    processors=[
+        structlog.contextvars.merge_contextvars,
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.stdlib.add_log_level,
+        structlog.processors.format_exc_info,
+        structlog.processors.JSONRenderer(),
+    ],
+)
 
 logger = get_logger()
 
@@ -33,6 +45,10 @@ async def consume_orders() -> None:
         try:
             for stream in messages:
                 for message in stream[1]:
+                    request_id = message[1].get("request_id", "unknown")
+                    structlog.contextvars.clear_contextvars()
+                    structlog.contextvars.bind_contextvars(request_id=request_id)
+
                     start = perf_counter()
                     async with AsyncSessionLocal() as session:
                         order = await fetch_order(
@@ -52,9 +68,16 @@ async def consume_orders() -> None:
                         await add_order_history(order, session)
                         await session.flush()
                         await session.commit()
+                        logger.info(
+                            "Order status updated",
+                            order_id=order.id,
+                            status=order.status.value,
+                        )
 
                         if tenant.webhook_url:
-                            create_task(safe_deliver_webhook(tenant, order))
+                            create_task(
+                                safe_deliver_webhook(tenant, order, request_id)
+                            )
 
                         await asyncio.sleep(1)
 
@@ -64,9 +87,16 @@ async def consume_orders() -> None:
                         await add_order_history(order, session)
                         await session.flush()
                         await session.commit()
+                        logger.info(
+                            "Order status updated",
+                            order_id=order.id,
+                            status=order.status.value,
+                        )
 
                         if tenant.webhook_url:
-                            create_task(safe_deliver_webhook(tenant, order))
+                            create_task(
+                                safe_deliver_webhook(tenant, order, request_id)
+                            )
 
                         await redis_client.xack(
                             "orders", "processing-group", message[0]
@@ -82,7 +112,6 @@ async def consume_orders() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     try:
-        # runs at startup
         await redis_client.xgroup_create(
             "orders", "processing-group", id="0", mkstream=True
         )
@@ -91,7 +120,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     create_task(consume_orders())
     yield
-    # runs at shutdown
 
 
 app = FastAPI(

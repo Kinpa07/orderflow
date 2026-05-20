@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -58,6 +58,7 @@ async def get_order_status(
 
 @order_router.post("/", response_model=OrderResponse)
 async def create_orders(
+    request: Request,
     tenant_id: int,
     order: OrderCreate,
     tenant: TenantResponse = Depends(verify_api_key),
@@ -67,5 +68,5 @@ async def create_orders(
 ) -> OrderResponse:
     if tenant.id != tenant_id:
         raise HTTPException(status_code=403, detail="Forbidden: Tenant ID mismatch")
-    response = await create_order(tenant, order, db, redis)
+    response = await create_order(tenant, order, db, redis, request.state.request_id)
     return response

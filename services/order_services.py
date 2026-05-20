@@ -17,7 +17,11 @@ from schemas.tenant import TenantResponse
 
 
 async def create_order(
-    tenant: TenantResponse, order: OrderCreate, db: AsyncSession, redis: Redis
+    tenant: TenantResponse,
+    order: OrderCreate,
+    db: AsyncSession,
+    redis: Redis,
+    request_id: str,
 ) -> OrderResponse:
 
     maximum_price = tenant.config.maximum_price
@@ -36,7 +40,12 @@ async def create_order(
     await add_order(result, db)
     await add_order_history(result, db)
     await redis.xadd(
-        "orders", {"order_id": str(result.id), "tenant_id": str(tenant.id)}
+        "orders",
+        {
+            "order_id": str(result.id),
+            "tenant_id": str(tenant.id),
+            "request_id": request_id,
+        },
     )
     return OrderResponse.model_validate(result)
 
