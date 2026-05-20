@@ -4,6 +4,7 @@ import structlog
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from prometheus_client import make_asgi_app
 
 from error import AppError
 from middleware import APIMiddleware
@@ -24,6 +25,7 @@ structlog.configure(
 app = FastAPI()
 
 app.add_middleware(APIMiddleware)
+app.mount("/metrics", make_asgi_app())
 
 
 @app.exception_handler(HTTPException)

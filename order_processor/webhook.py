@@ -3,12 +3,18 @@ import hashlib
 import hmac
 import json
 from datetime import UTC, datetime
+from time import perf_counter
 
 import httpx
 from structlog import get_logger
 
 from config import WEBHOOK_RETRY_COUNT, WEBHOOK_TIMEOUT
 from db.session import AsyncSessionLocal
+from metrics import (
+    dead_letter_queue_depth,
+    webhook_deliveries_total,
+    webhook_delivery_duration_seconds,
+)
 from models.dead_letter_webhook import DeadLetterWebhook
 from models.order import Order
 from models.tenant import Tenant
@@ -35,6 +41,7 @@ async def deliver_webhook(tenant: Tenant, order: Order) -> None:
         digestmod=hashlib.sha256,
     ).hexdigest()
 
+    start = perf_counter()
     last_error = "unknown error"
     for attempt in range(WEBHOOK_RETRY_COUNT):
         try:
@@ -49,6 +56,8 @@ async def deliver_webhook(tenant: Tenant, order: Order) -> None:
                     timeout=WEBHOOK_TIMEOUT,
                 )
                 if response.status_code < 400:
+                    webhook_delivery_duration_seconds.observe(perf_counter() - start)
+                    webhook_deliveries_total.labels(status="success").inc()
                     return
                 last_error = f"HTTP {response.status_code}"
 
@@ -56,6 +65,10 @@ async def deliver_webhook(tenant: Tenant, order: Order) -> None:
             last_error = str(e)
 
         await asyncio.sleep(2**attempt)
+
+    webhook_delivery_duration_seconds.observe(perf_counter() - start)
+    webhook_deliveries_total.labels(status="dead_letter").inc()
+    dead_letter_queue_depth.inc()
 
     async with AsyncSessionLocal() as session:
         session.add(

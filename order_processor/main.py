@@ -2,13 +2,16 @@ import asyncio
 from asyncio import create_task
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from time import perf_counter
 
 from fastapi import FastAPI
+from prometheus_client import make_asgi_app
 from redis.exceptions import ResponseError
 from structlog import get_logger
 
 from clients.redis import redis_client
 from db.session import AsyncSessionLocal
+from metrics import order_processing_duration_seconds
 from models.order_status import OrderStatus
 from models.tenant import Tenant  # noqa: F401
 from order_processor.webhook import safe_deliver_webhook
@@ -30,6 +33,7 @@ async def consume_orders() -> None:
         try:
             for stream in messages:
                 for message in stream[1]:
+                    start = perf_counter()
                     async with AsyncSessionLocal() as session:
                         order = await fetch_order(
                             int(message[1]["tenant_id"]),
@@ -67,6 +71,9 @@ async def consume_orders() -> None:
                         await redis_client.xack(
                             "orders", "processing-group", message[0]
                         )
+                        order_processing_duration_seconds.observe(
+                            perf_counter() - start
+                        )
 
         except Exception:
             logger.exception("consumer iteration failed")
@@ -90,3 +97,4 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(
     lifespan=lifespan,
 )
+app.mount("/metrics", make_asgi_app())
