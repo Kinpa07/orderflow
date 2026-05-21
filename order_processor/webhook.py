@@ -6,6 +6,8 @@ from datetime import UTC, datetime
 from time import perf_counter
 
 import httpx
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 from structlog import get_logger
 
 from config import WEBHOOK_RETRY_COUNT, WEBHOOK_TIMEOUT
@@ -20,6 +22,13 @@ from models.order import Order
 from models.tenant import Tenant
 
 logger = get_logger()
+
+
+async def refresh_dead_letter_depth(session: AsyncSession) -> None:
+    count = await session.scalar(
+        select(func.count()).select_from(DeadLetterWebhook)
+    )
+    dead_letter_queue_depth.set(count or 0)
 
 
 async def deliver_webhook(tenant: Tenant, order: Order, request_id: str) -> None:
@@ -69,7 +78,6 @@ async def deliver_webhook(tenant: Tenant, order: Order, request_id: str) -> None
 
     webhook_delivery_duration_seconds.observe(perf_counter() - start)
     webhook_deliveries_total.labels(status="dead_letter").inc()
-    dead_letter_queue_depth.inc()
 
     async with AsyncSessionLocal() as session:
         session.add(
@@ -82,6 +90,7 @@ async def deliver_webhook(tenant: Tenant, order: Order, request_id: str) -> None
             )
         )
         await session.commit()
+        await refresh_dead_letter_depth(session)
 
 
 async def safe_deliver_webhook(tenant: Tenant, order: Order, request_id: str) -> None:
