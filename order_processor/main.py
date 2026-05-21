@@ -35,10 +35,21 @@ logger = get_logger()
 _background_tasks: set[asyncio.Task[None]] = set()
 
 
+def _task_done(task: asyncio.Task[Any]) -> None:
+    _background_tasks.discard(task)
+
+    try:
+        exc = task.exception()
+        if exc:
+            logger.exception("Background task failed", exc_info=exc)
+    except asyncio.CancelledError:
+        logger.info("Background task cancelled")
+
+
 def spawn_background(coro: Coroutine[Any, Any, None]) -> asyncio.Task[None]:
     task = asyncio.create_task(coro)
     _background_tasks.add(task)
-    task.add_done_callback(_background_tasks.discard)
+    task.add_done_callback(_task_done)
     return task
 
 
@@ -109,18 +120,14 @@ async def consume_orders() -> None:
                             safe_deliver_webhook(tenant, order, request_id)
                         )
 
-                    await redis_client.xack(
-                        "orders", "processing-group", message[0]
-                    )
+                    await redis_client.xack("orders", "processing-group", message[0])
                 except Exception:
                     logger.exception(
                         "order processing failed",
                         stream_id=message[0],
                     )
                 finally:
-                    order_processing_duration_seconds.observe(
-                        perf_counter() - start
-                    )
+                    order_processing_duration_seconds.observe(perf_counter() - start)
 
 
 @asynccontextmanager
