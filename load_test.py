@@ -19,6 +19,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import httpx
 
+from config import WEBHOOK_RETRY_COUNT
+
 BASE_URL = "http://localhost:8000"
 WEBHOOK_PORT = 9999
 # host.docker.internal resolves to the host machine from inside Docker Desktop
@@ -148,7 +150,7 @@ async def main() -> None:
                 json={"price": round(random.uniform(10.0, 499.0), 2)},
                 headers={"api-key": key},
             )
-            totals[_bucket(warm)] += 1  # type: ignore[arg-type]
+            totals[_bucket(warm)] += 1
             ids: list[int] = []
             if warm.status_code == 200:
                 ids.append(warm.json()["id"])
@@ -164,7 +166,7 @@ async def main() -> None:
             ]
             batch = await asyncio.gather(*tasks, return_exceptions=True)
             for resp in batch:
-                totals[_bucket(resp)] += 1  # type: ignore[arg-type]
+                totals[_bucket(resp)] += 1
                 if not isinstance(resp, BaseException) and resp.status_code == 200:
                     ids.append(resp.json()["id"])
 
@@ -199,7 +201,7 @@ async def main() -> None:
         ]
         responses = await asyncio.gather(*bad_webhook_tasks, return_exceptions=True)
         for resp in responses:
-            totals[_bucket(resp)] += 1  # type: ignore[arg-type]
+            totals[_bucket(resp)] += 1
         print(f"  3 orders submitted, totals: {dict(totals)}\n")
 
         # ------------------------------------------------------------------
@@ -220,7 +222,7 @@ async def main() -> None:
             ]
             responses = await asyncio.gather(*tasks, return_exceptions=True)
             for resp in responses:
-                totals[_bucket(resp)] += 1  # type: ignore[arg-type]
+                totals[_bucket(resp)] += 1
         print(f"  running totals: {dict(totals)}\n")
 
         # ------------------------------------------------------------------
@@ -252,7 +254,7 @@ async def main() -> None:
                 *bad_price, *bad_auth, return_exceptions=True
             )
             for resp in responses:
-                totals[_bucket(resp)] += 1  # type: ignore[arg-type]
+                totals[_bucket(resp)] += 1
             print(f"  wave {wave + 1}/5: totals {dict(totals)}")
             if wave < 4:
                 await asyncio.sleep(12)  # >= 1 scrape interval (15s) over the 5 waves
@@ -285,7 +287,11 @@ async def main() -> None:
         final_fail = _webhook_fail_count
 
     print(f"\nWebhook deliveries received: {final} / ~{valid_orders} expected")
-    print(f"Failing webhook hits (expected 3 orders * {3} retries = 9): {final_fail}")
+    print(
+        "Failing webhook hits "
+        f"(expected 3 orders * 2 transitions * {WEBHOOK_RETRY_COUNT} retries = 18): "
+        f"{final_fail}"
+    )
     print(
         "\nGrafana: http://localhost:3000"
         "\n  -> find 'OrderFlow' dashboard"
