@@ -4,6 +4,7 @@ import structlog
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from prometheus_client import make_asgi_app
 
 from error import AppError
 from middleware import APIMiddleware
@@ -12,11 +13,10 @@ from routers.tenant_routes import tenant_router
 
 structlog.configure(
     processors=[
-        # Add timestamp field
+        structlog.contextvars.merge_contextvars,
         structlog.processors.TimeStamper(fmt="iso"),
-        # Add level="info"/"error"
         structlog.stdlib.add_log_level,
-        # Convert final event dict to JSON
+        structlog.processors.format_exc_info,
         structlog.processors.JSONRenderer(),
     ],
 )
@@ -24,6 +24,7 @@ structlog.configure(
 app = FastAPI()
 
 app.add_middleware(APIMiddleware)
+app.mount("/metrics", make_asgi_app())
 
 
 @app.exception_handler(HTTPException)

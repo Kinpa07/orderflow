@@ -3,12 +3,20 @@ import hashlib
 import hmac
 import json
 from datetime import UTC, datetime
+from time import perf_counter
 
 import httpx
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 from structlog import get_logger
 
 from config import WEBHOOK_RETRY_COUNT, WEBHOOK_TIMEOUT
 from db.session import AsyncSessionLocal
+from metrics import (
+    dead_letter_queue_depth,
+    webhook_deliveries_total,
+    webhook_delivery_duration_seconds,
+)
 from models.dead_letter_webhook import DeadLetterWebhook
 from models.order import Order
 from models.tenant import Tenant
@@ -16,7 +24,14 @@ from models.tenant import Tenant
 logger = get_logger()
 
 
-async def deliver_webhook(tenant: Tenant, order: Order) -> None:
+async def refresh_dead_letter_depth(session: AsyncSession) -> None:
+    count = await session.scalar(
+        select(func.count()).select_from(DeadLetterWebhook)
+    )
+    dead_letter_queue_depth.set(count or 0)
+
+
+async def deliver_webhook(tenant: Tenant, order: Order, request_id: str) -> None:
     if not tenant.webhook_url:
         return
     body = {
@@ -35,6 +50,7 @@ async def deliver_webhook(tenant: Tenant, order: Order) -> None:
         digestmod=hashlib.sha256,
     ).hexdigest()
 
+    start = perf_counter()
     last_error = "unknown error"
     for attempt in range(WEBHOOK_RETRY_COUNT):
         try:
@@ -44,11 +60,14 @@ async def deliver_webhook(tenant: Tenant, order: Order) -> None:
                     content=payload,
                     headers={
                         "X-Signature": signature,
+                        "X-Request-Id": request_id,
                         "Content-Type": "application/json",
                     },
                     timeout=WEBHOOK_TIMEOUT,
                 )
                 if response.status_code < 400:
+                    webhook_delivery_duration_seconds.observe(perf_counter() - start)
+                    webhook_deliveries_total.labels(status="success").inc()
                     return
                 last_error = f"HTTP {response.status_code}"
 
@@ -56,6 +75,9 @@ async def deliver_webhook(tenant: Tenant, order: Order) -> None:
             last_error = str(e)
 
         await asyncio.sleep(2**attempt)
+
+    webhook_delivery_duration_seconds.observe(perf_counter() - start)
+    webhook_deliveries_total.labels(status="dead_letter").inc()
 
     async with AsyncSessionLocal() as session:
         session.add(
@@ -68,11 +90,12 @@ async def deliver_webhook(tenant: Tenant, order: Order) -> None:
             )
         )
         await session.commit()
+        await refresh_dead_letter_depth(session)
 
 
-async def safe_deliver_webhook(tenant: Tenant, order: Order) -> None:
+async def safe_deliver_webhook(tenant: Tenant, order: Order, request_id: str) -> None:
     try:
-        await deliver_webhook(tenant, order)
+        await deliver_webhook(tenant, order, request_id)
     except Exception:
         logger.exception(
             "webhook delivery raised",

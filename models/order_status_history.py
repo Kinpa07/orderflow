@@ -13,5 +13,8 @@ class OrderStatusHistory(Base):
     order_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("orders.id"), nullable=False
     )
-    status: Mapped[OrderStatus] = mapped_column(Enum(OrderStatus), nullable=False)
+    status: Mapped[OrderStatus] = mapped_column(
+        Enum(OrderStatus, values_callable=lambda obj: [e.value for e in obj]),
+        nullable=False,
+    )
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

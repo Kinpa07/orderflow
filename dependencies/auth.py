@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config import TENANT_CACHE_TTL
 from dependencies.db import get_db
 from dependencies.redis import get_redis
+from metrics import cache_results_total
 from repositories.tenant_repository import get_tenant_by_api_key
 from schemas.tenant import TenantResponse
 from services.cache.tenant_cache import (
@@ -25,8 +26,10 @@ async def verify_api_key(
 
     cache = await check_cache(api_key, redis)
     if cache:
+        cache_results_total.labels(result="hit").inc()
         tenant = TenantResponse(**cache)
     else:
+        cache_results_total.labels(result="miss").inc()
         db_tenant = await get_tenant_by_api_key(api_key, db)
         if not db_tenant:
             raise HTTPException(status_code=401, detail="Invalid API key")
