@@ -51,7 +51,7 @@ async def test_failed_webhook_stored_in_dead_letter(
         status=OrderStatus.SHIPPED, priority=4
     )
 
-    await deliver_webhook(tenant, order)
+    await deliver_webhook(tenant, order, "test-request-id")
 
     result = await db_session.execute(
         select(DeadLetterWebhook).where(DeadLetterWebhook.tenant_id == tenant_id)

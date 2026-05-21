@@ -63,7 +63,7 @@ async def test_webhook_delivery_sends_signed_payload(
             status=OrderStatus.PROCESSING, priority=4,
         )
 
-        await deliver_webhook(tenant, order)
+        await deliver_webhook(tenant, order, "test-request-id")
 
     assert len(captured) == 1
     body_bytes = captured[0]["body"]
@@ -73,3 +73,4 @@ async def test_webhook_delivery_sends_signed_payload(
 
     expected_sig = hmac.new(api_key.encode(), body_bytes, hashlib.sha256).hexdigest()
     assert captured[0]["headers"]["x-signature"] == expected_sig
+    assert captured[0]["headers"]["x-request-id"] == "test-request-id"
