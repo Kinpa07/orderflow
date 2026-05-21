@@ -1,3 +1,5 @@
+[![CI](https://github.com/Kinpa07/orderflow/actions/workflows/ci.yml/badge.svg)](https://github.com/Kinpa07/orderflow/actions/workflows/ci.yml)
+
 # OrderFlow
 
 A multi-tenant order processing pipeline built with Python, FastAPI, PostgreSQL, and Redis.

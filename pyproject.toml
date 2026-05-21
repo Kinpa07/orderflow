@@ -34,6 +34,12 @@ asyncio_mode = "auto"
 pythonpath = "."
 env_files = [".env.test"]
 
+[tool.coverage.run]
+omit = ["tests/*", "alembic/*", "load_test.py", "cli.py", "order_processor/main.py"]
+
+[tool.coverage.report]
+fail_under = 80
+
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
