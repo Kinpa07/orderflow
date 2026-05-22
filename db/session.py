@@ -9,6 +9,8 @@ from sqlalchemy.ext.asyncio import (
 )
 from structlog import get_logger
 
+from config import DB_MAX_OVERFLOW, DB_POOL_RECYCLE, DB_POOL_SIZE, DB_POOL_TIMEOUT
+
 logger = get_logger()
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
@@ -20,6 +22,10 @@ engine = create_async_engine(
     DATABASE_URL,
     echo=False,
     pool_pre_ping=True,
+    pool_size=DB_POOL_SIZE,
+    max_overflow=DB_MAX_OVERFLOW,
+    pool_timeout=DB_POOL_TIMEOUT,
+    pool_recycle=DB_POOL_RECYCLE,
 )
 
 
