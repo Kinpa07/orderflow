@@ -12,8 +12,10 @@ BASE_URL = os.environ.get("ORDERFLOW_API_URL", "http://localhost:8000")
 app = typer.Typer()
 tenants_app = typer.Typer()
 orders_app = typer.Typer()
+webhooks_app = typer.Typer()
 app.add_typer(tenants_app, name="tenants")
 app.add_typer(orders_app, name="orders")
+app.add_typer(webhooks_app, name="webhooks")
 
 
 def _handle_response(response: httpx.Response) -> None:
@@ -207,3 +209,20 @@ def watch(
 
         except KeyboardInterrupt:
             raise typer.Exit(code=0)
+
+
+@webhooks_app.command(name="dead-letter")
+def dead_letter(
+    tenant_id: int = typer.Option(..., "--tenant", help="Tenant ID"),
+    api_key: str = typer.Option(..., help="API key"),
+) -> None:
+    with httpx.Client() as client:
+        try:
+            response = client.get(
+                f"{BASE_URL}/tenants/{tenant_id}/webhooks/dead-letter",
+                headers={"api-key": api_key},
+            )
+        except httpx.RequestError as e:
+            typer.echo(f"Connection Error: {e}", err=True)
+            raise typer.Exit(code=1)
+        _handle_response(response)
