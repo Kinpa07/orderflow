@@ -12,3 +12,7 @@ DB_POOL_RECYCLE = int(os.environ.get("DB_POOL_RECYCLE", "1800"))
 
 # Redis connection pool
 REDIS_MAX_CONNECTIONS = int(os.environ.get("REDIS_MAX_CONNECTIONS", "20"))
+
+# Request validation limits
+MAX_BODY_SIZE = int(os.environ.get("MAX_BODY_SIZE", str(1 * 1024 * 1024)))  # 1 MB
+MAX_PAGE_SIZE = int(os.environ.get("MAX_PAGE_SIZE", "100"))

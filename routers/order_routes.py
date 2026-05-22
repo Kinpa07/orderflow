@@ -1,9 +1,10 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from config import MAX_PAGE_SIZE
 from dependencies.auth import verify_api_key
 from dependencies.db import get_db
 from dependencies.rate_limit import rate_limit
@@ -24,7 +25,7 @@ async def list_orders(
     cursor_created_at: datetime | None = None,
     cursor_id: int | None = None,
     status: OrderStatus | None = None,
-    limit: int = 20,
+    limit: int = Query(default=20, ge=1, le=MAX_PAGE_SIZE),
     tenant: TenantResponse = Depends(verify_api_key),
     _: bool = Depends(rate_limit),
 ) -> OrderResponseList:
