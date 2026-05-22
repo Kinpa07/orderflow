@@ -6,7 +6,14 @@ from dependencies.auth import verify_api_key
 from dependencies.db import get_db
 from dependencies.rate_limit import rate_limit
 from dependencies.redis import get_redis
-from schemas.tenant import TenantCreate, TenantResponse, TenantUpdate
+from repositories.tenant_repository import list_dead_letters
+from schemas.tenant import (
+    DeadLetterWebhookListResponse,
+    DeadLetterWebhookResponse,
+    TenantCreate,
+    TenantResponse,
+    TenantUpdate,
+)
 from services.tenant_services import create_tenant, modify_tenant
 
 tenant_router = APIRouter()
@@ -35,3 +42,23 @@ async def update_tenants(
 
     result = await modify_tenant(tenant, update, db, redis)
     return result
+
+
+@tenant_router.get(
+    "/{tenant_id}/webhooks/dead-letter",
+    response_model=DeadLetterWebhookListResponse,
+)
+async def list_dead_letter_webhooks(
+    tenant_id: int,
+    db: AsyncSession = Depends(get_db),
+    tenant: TenantResponse = Depends(verify_api_key),
+    _: bool = Depends(rate_limit),
+) -> DeadLetterWebhookListResponse:
+    if tenant.id != tenant_id:
+        raise HTTPException(status_code=403, detail="Forbidden: Tenant ID mismatch")
+
+    records = await list_dead_letters(tenant_id, db)
+    return DeadLetterWebhookListResponse(
+        items=[DeadLetterWebhookResponse.model_validate(r) for r in records],
+        total=len(records),
+    )

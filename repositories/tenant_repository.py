@@ -1,6 +1,9 @@
+from collections.abc import Sequence
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from models.dead_letter_webhook import DeadLetterWebhook
 from models.tenant import Tenant
 
 
@@ -25,3 +28,14 @@ async def update_tenant(
 
     await db.flush()
     return tenant
+
+
+async def list_dead_letters(
+    tenant_id: int, db: AsyncSession
+) -> Sequence[DeadLetterWebhook]:
+    stmt = (
+        select(DeadLetterWebhook)
+        .where(DeadLetterWebhook.tenant_id == tenant_id)
+        .order_by(DeadLetterWebhook.failed_at.desc())
+    )
+    return (await db.execute(stmt)).scalars().all()

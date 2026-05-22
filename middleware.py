@@ -4,9 +4,10 @@ from time import perf_counter
 import structlog.contextvars
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
-from starlette.responses import Response
+from starlette.responses import JSONResponse, Response
 from structlog import get_logger
 
+from config import MAX_BODY_SIZE
 from metrics import (
     http_request_duration_seconds,
     http_requests_in_progress,
@@ -22,6 +23,21 @@ class APIMiddleware(BaseHTTPMiddleware):
     ) -> Response:
         if request.url.path.startswith("/metrics"):
             return await call_next(request)
+
+        content_length = request.headers.get("content-length")
+        if content_length and int(content_length) > MAX_BODY_SIZE:
+            return JSONResponse(
+                status_code=413,
+                content={
+                    "error": {
+                        "message": (
+                            f"Request body exceeds the {MAX_BODY_SIZE} byte limit"
+                        ),
+                        "code": 413,
+                        "details": [],
+                    }
+                },
+            )
 
         method = request.method
         endpoint = request.url.path

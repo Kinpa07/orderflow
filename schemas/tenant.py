@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -35,3 +37,19 @@ class TenantUpdate(BaseModel):
     phone: str | None = None
     config: TenantConfig | None = None
     webhook_url: str | None = None
+
+
+class DeadLetterWebhookResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    tenant_id: int
+    order_id: int
+    webhook_url: str
+    payload: str
+    error_message: str
+    failed_at: datetime
+
+
+class DeadLetterWebhookListResponse(BaseModel):
+    items: list[DeadLetterWebhookResponse]
+    total: int
